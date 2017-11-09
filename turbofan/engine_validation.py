@@ -51,7 +51,7 @@ class Engine(Model):
                         Fspec = Variable('F_{spec}', 'N', 'Specified Total Thrust')
                     if res7 == 1:
                         Tt4spec = Variable('T_{t_{4spec}}', 'K', 'Specified Combustor Exit (Station 4) Stagnation Temperature')
-                    
+
 
         else:
             with Vectorize(N):
@@ -63,8 +63,8 @@ class Engine(Model):
                     Fspec = Variable('F_{spec}', 'N', 'Specified Total Thrust')
                 if res7 == 1:
                     Tt4spec = Variable('T_{t_{4spec}}', 'K', 'Specified Combustor Exit (Station 4) Stagnation Temperature')
-                
-            
+
+
         models = [self.compressor , self. combustor, self. turbine, self. thrust, self.fanmap, self.lpcmap, self.hpcmap, self.sizing, self.state, self.engineP]
 
         #engine weight
@@ -110,11 +110,11 @@ class Engine(Model):
 
             shaftpower = [
                 #HPT shafter power balance
-                #SIGNOMIAL   
+                #SIGNOMIAL
                 SignomialEquality(self.constants['M_{takeoff}']*self.turbine['\eta_{HPshaft}']*(1+self.engineP['f'])*(self.engineP['h_{t_{4.1}}']-self.engineP['h_{t_{4.5}}']), self.engineP['h_{t_3}'] - self.engineP['h_{t_{2.5}}']),    #B.161
 
                 #LPT shaft power balance
-                #SIGNOMIAL  
+                #SIGNOMIAL
                 SignomialEquality(self.constants['M_{takeoff}']*self.turbine['\eta_{LPshaft}']*(1+self.engineP['f'])*
                 (self.engineP['h_{t_{4.9}}'] - self.engineP['h_{t_{4.5}}']),-((self.engineP['h_{t_{2.5}}']-self.engineP['h_{t_{1.8}}'])+self.engineP['\\alpha_{+1}']*(self.engineP['h_{t_{2.1}}'] - self.engineP['h_{T_{2}}']))),    #B.165
                 ]
@@ -161,7 +161,7 @@ class Engine(Model):
             opr = [
                 OPR == self.engineP['\\pi_{hc}']*self.engineP['\\pi_{lc}']*self.engineP['\\pi_{f}'],
                 ]
- 
+
             thrust = [
                 self.engineP['P_{t_8}'] == self.engineP['P_{t_7}'], #B.179
                 self.engineP['T_{t_8}'] == self.engineP['T_{t_7}'], #B.180
@@ -335,17 +335,7 @@ class Engine(Model):
                 #option #1, constrain the engine's thrust
                 self.engineP['F'] == Fspec,
                 ]
-            if cooling == True:
-                Tt41max = Variable('T_{t_{4.1_{max}}}', 'K', 'Max turbine inlet temperature')
-                res7list.extend([
-                    self.engineP['T_{t_{4.1}}']  <= Tt41max,
-                    ])
-            else:
-                Tt4max = Variable('T_{t_{4_{max}}}', 'K', 'Max turbine inlet temperature')
-                res7list.extend([
-                    self.engineP['T_{t_4}'] <= Tt4max,
-                    ])
-    
+
         if res7 == 1:
             if cooling == True:
                 res7list = [
@@ -365,7 +355,7 @@ class Engine(Model):
 
         if cooling == False:
             constraints = [weight, diameter, fnomix, shaftpower, hptexit, fanmap, lpcmap, hpcmap, opr, thrust, res1, res2, res3, res4, res5, massflux, fanarea, HPCarea, onDest, res7list]
-        
+
         return models, constraints
 
     def dynamic(self, state, res7, BLI):
@@ -382,7 +372,7 @@ class Engine(Model):
             fan_eta_reduct = 0.96
         else:
             fan_eta_reduct = 1.0
-        
+
         goption = 1
         if eng == 0:
             """set CFM56 validation exponents"""
@@ -685,7 +675,7 @@ class EnginePerformance(Model):
         self.sizingP = engine.sizing.dynamic(engine.constants, engine.compressor, engine.fanmap, engine.lpcmap, engine.hpcmap, state, res7)
 
         models = [self.compP, self.combP, self.turbineP, self.thrustP, self.fanmapP, self.lpcmapP, self.hpcmapP, self.sizingP]
-    
+
         return models
 
 class EngineConstants(Model):
@@ -699,7 +689,7 @@ class EngineConstants(Model):
 
         #gravity
         g = Variable('g', 9.81, 'm/(s^2)', 'Gravitational Acceleration')
-        
+
         #-------------------------reference temp and pressure--------------------
         Tref = Variable('T_{ref}', 'K', 'Reference Stagnation Temperature')
         Pref = Variable('P_{ref}', 'kPa', 'Reference Stagnation Pressure')
@@ -733,7 +723,7 @@ class Compressor(Model):
         """
         creates an instance of the compressor performance model
         """
-        return CompressorPerformance(self, engine, state, BLI) 
+        return CompressorPerformance(self, engine, state, BLI)
 
 class CompressorPerformance(Model):
     """
@@ -742,7 +732,7 @@ class CompressorPerformance(Model):
     def setup(self, comp, engine, state, BLI):
         self.comp = comp
         self.engine = engine
-        
+
         #define new variables
         #--------------------------free stream stagnation states--------------------------
         Pt0 = Variable('P_{t_0}', 'kPa', 'Free Stream Stagnation Pressure')
@@ -753,7 +743,7 @@ class CompressorPerformance(Model):
         Pt18 = Variable('P_{t_{1.8}}', 'kPa', 'Stagnation Pressure at the Diffuser Exit (1.8)')
         Tt18 = Variable('T_{t_{1.8}}', 'K', 'Stagnation Temperature at the Diffuser Exit (1.8)')
         ht18 = Variable('h_{t_{1.8}}', 'J/kg', 'Stagnation Enthalpy at the Diffuser Exit (1.8)')
-        
+
         #--------------------------fan inlet (station 2) stagnation states---------------------------
         Pt2 = Variable('P_{T_{2}}', 'kPa', 'Stagnation Pressure at the Fan Inlet (2)')
         Tt2 = Variable('T_{T_{2}}', 'K', 'Stagnation Temperature at the Fan Inlet (2)')
@@ -815,12 +805,12 @@ class CompressorPerformance(Model):
             Tt2 == Tt18,    #B.120
             ht2 == ht18,    #B.121
             Pt2 == Pt18,
-                        
+
             #fan exit constraints (station 2.1)
             Pt21 == pif * Pt2,  #16.50
             Tt21 == Tt2 * pif ** (fexp1),   #16.50
             ht21 == self.comp['C_{p_{air}'] * Tt21,   #16.50
-                       
+
             #fan nozzle exit (station 7)
             Pt7 == self.comp['\\pi_{fn}'] * Pt21,     #B.125
             Tt7 == Tt21,    #B.126
@@ -839,7 +829,7 @@ class CompressorPerformance(Model):
             Tt3 == Tt25 * pihc ** (hpcexp1),
             ht3 == self.comp['C_{p_{2}'] * Tt3
             ]
-        
+
         return diffuser, fan, lpc, hpc
 
 class Combustor(Model):
@@ -872,7 +862,7 @@ class Combustor(Model):
         """
         creates an instance of the fan map performance model
         """
-        return CombustorPerformance(self, engine, state) 
+        return CombustorPerformance(self, engine, state)
 
 class CombustorPerformance(Model):
     """
@@ -908,7 +898,7 @@ class CombustorPerformance(Model):
         fp1 = Variable('fp1', '-', 'f + 1')
 
         #make the constraints
-        constraints = []        
+        constraints = []
 
         with SignomialsEnabled():
             #combustor constraints
@@ -925,17 +915,17 @@ class CombustorPerformance(Model):
                 #investigate doing this with a substitution
                 M4a == .1025,
                 ])
-                     
+
             #mixing constraints
             if mixing == True:
                 constraints.extend([
                     fp1*u41 == (u4a*(fp1)*self.combustor['\\alpha_c']*uc)**.5,
                     #this is a stagnation relation...need to fix it to not be signomial
                     SignomialEquality(T41, Tt41-.5*(u41**2)/self.combustor['C_{p_{c}}']),
-                    
+
                     #here we assume no pressure loss in mixing so P41=P4a
                     Pt41 == P4a*(Tt41/T41)**(ccexp1),
-                    
+
                     #compute station 4a quantities, assumes a gamma value of 1.313 (air @ 1400K)
                     u4a == M4a*((1.313*self.engine['R']*Tt4)**.5)/self.combustor['hold_{4a}'],
                     uc == self.combustor['r_{uc}']*u4a,
@@ -947,7 +937,7 @@ class CombustorPerformance(Model):
                     Pt41 == Pt4,
                     Tt41 == Tt4,
                     ])
-                
+
         return constraints
 
 class Turbine(Model):
@@ -1036,7 +1026,7 @@ class FanMap(Model):
         """
         creates an instance of the fan map performance model
         """
-        return FanMapPerformance(self, engine)   
+        return FanMapPerformance(self, engine)
 
 class FanMapPerformance(Model):
     """
@@ -1051,7 +1041,7 @@ class FanMapPerformance(Model):
         #Mass Flow Variables
         mf = Variable('m_{f}', 'kg/s', 'Fan Corrected Mass Flow')
         mtildf = Variable('m_{tild_f}', '-', 'Fan Normalized Mass Flow')
-        
+
         #----------------------Compressor Speeds--------------------
         #Speed Variables...by setting the design speed to be 1 since only ratios are
         #imporant I was able to drop out all the other speeds
@@ -1059,7 +1049,7 @@ class FanMapPerformance(Model):
 
         #make the constraints
         constraints = []
-        
+
         #fan map
         constraints.extend([
             #define mtild
@@ -1082,8 +1072,8 @@ class LPCMap(Model):
         """
         creates an instance of the HPC map performance model
         """
-        return LPCMapPerformance(self, engine)   
-        
+        return LPCMapPerformance(self, engine)
+
 class LPCMapPerformance(Model):
     """
     LPC map perfomrance constraints
@@ -1129,8 +1119,8 @@ class HPCMap(Model):
         """
         creates an instance of the HPC map performance model
         """
-        return HPCMapPerformance(self, engine)   
-        
+        return HPCMapPerformance(self, engine)
+
 class HPCMapPerformance(Model):
     """
     HPC map perfomrance constraints
@@ -1187,7 +1177,7 @@ class ThrustPerformance(Model):
     def setup(self, thrust, engine, state, BLI):
         self.thrust = thrust
         self.engine = engine
-        
+
         #define new variables
         #------------------fan exhaust (station 8) statge variables------------
         P8 = Variable('P_{8}', 'kPa', 'Fan Exhaust Static Pressure')
@@ -1238,7 +1228,7 @@ class ThrustPerformance(Model):
                 TCS([u8**2 + 2*h8 <= 2*ht8]),
                 (P8/Pt8)**(fanexexp) == T8/Tt8,
                 ht8 == self.thrust['C_{p_{fex}'] * Tt8,
-                
+
                 #core exhaust
                 P6 == state["P_{atm}"],   #B.4.11 intro
                 (P6/Pt6)**(turbexexp) == T6/Tt6,
@@ -1251,7 +1241,7 @@ class ThrustPerformance(Model):
                 hold == alphap1,
                 SignomialEquality(hold, alpha + 1),
                 alpha <= self.thrust['\\alpha_{max}'],
-                
+
                 #SIGNOMIAL
                 TCS([F <= F6 + F8]),
 
@@ -1286,7 +1276,7 @@ class Sizing(Model):
 
         mhtD = Variable('m_{htD}', 'kg/s', 'Design HPT Corrected Mass Flow (see B.225)')
         mltD = Variable('m_{ltD}', 'kg/s', 'Design LPT Corrected Mass Flow (see B.226)')
-        
+
         #on design by pass ratio
         alpha_max = Variable('\\alpha_{OD}', '-', 'By Pass Ratio')
 
@@ -1296,7 +1286,7 @@ class Sizing(Model):
         A5 = Variable('A_{5}', 'm^2', 'Core Exhaust Nozzle Area')
         A7 = Variable('A_{7}', 'm^2', 'Fan Exhaust Nozzle Area')
 
-        mCoreD = Variable('m_{coreD}', 'kg/s', 'Estimated on Design Mass Flow')  
+        mCoreD = Variable('m_{coreD}', 'kg/s', 'Estimated on Design Mass Flow')
 
         #constraints
         constraints = []
@@ -1330,10 +1320,10 @@ class SizingPerformance(Model):
         #exhaust mach numbers
         a5 = Variable('a_{5}', 'm/s', 'Speed of Sound at Station 5')
         a7 = Variable('a_{7}', 'm/s', 'Speed of Sound at Station 7')
-        
+
         #mass flows
         mtot = Variable('m_{total}', 'kg/s', 'Total Engine Mass Flux')
-        
+
         #-------------------fan face variables---------------------
         rho2 = Variable('\\rho_{2}', 'kg/m^3', 'Air Static Density at Fan Face')
         T2 = Variable('T_{2}', 'K', 'Air Static Temperature at Fan Face')
@@ -1370,7 +1360,7 @@ class SizingPerformance(Model):
 
         #constraints
         constraints = []
- 
+
         #sizing constraints that hold the engine together
         constraints.extend([
             #residual 4
@@ -1379,14 +1369,14 @@ class SizingPerformance(Model):
             a7 == (1.4*self.engine['R']*T7)**.5,
             a7*M7 == u7,
             rho7 == P7/(self.engine['R']*T7),
-            
+
             #residual 5 core nozzle mass flow
             P5 >= state["P_{atm}"],
             M5 <= 1,
             a5 == (1.387*self.engine['R']*T5)**.5,
             a5*M5 == u5,
             rho5 == P5/(self.engine['R']*T5),
-            
+
             #component area sizing
             #fan area
             h2 == self.compressor['C_{p_{1}'] * T2,
@@ -1400,7 +1390,7 @@ class SizingPerformance(Model):
         ])
 
         return constraints
-        
+
 class TestState(Model):
     """
     state class only to be used for testing purposes
@@ -1408,9 +1398,9 @@ class TestState(Model):
     def setup(self):
         #define variables
         p_atm = Variable("P_{atm}", "kPa", "air pressure")
-        TH = 5.257386998354459 
+        TH = 5.257386998354459
         T_atm = Variable("T_{atm}", "K", "air temperature")
-  
+
         V = Variable('V', 'kts', 'Aircraft Flight Speed')
         a = Variable('a', 'm/s', 'Speed of Sound')
         R = Variable('R', 287, 'J/kg/K', 'Air Specific Heat')
@@ -1420,7 +1410,7 @@ class TestState(Model):
         #make constraints
         constraints = []
 
-        constraints.extend([           
+        constraints.extend([
             V == M * a,
             a  == (gamma * R * T_atm)**.5,
             ])
@@ -1587,7 +1577,7 @@ class TestMissionD82(Model):
         engineclimb = [
             engine['F_{spec}'][1] == 13.798*units('kN'),
             engine['F_{spec}'][0] == 11.949 * units('kN'),
-                        
+
             engine.state['P_{atm}'][1] == 23.84*units('kPa'),    #36K feet
             engine.state["T_{atm}"][1] == 218*units('K'),
             engine.state['M'][1] == M0,
@@ -1630,7 +1620,7 @@ def test():
     mission = TestMissionCFM(engine)
 
     substitutions = get_cfm56_subs()
- 
+
     m = Model((10*engine.engineP.thrustP['TSFC'][0]+engine.engineP.thrustP['TSFC'][1]), [engine, mission], substitutions)
     m.substitutions.update(substitutions)
     sol = m.localsolve(verbosity = 0)
@@ -1643,12 +1633,12 @@ if __name__ == "__main__":
     eng = 3 is TASOPT D8.2, set N=2
     """
     eng = 1
-    
+
     if eng == 0 or eng == 2 or eng == 3:
         N = 2
     if eng == 1:
         N = 3
-        
+
     with Vectorize(N):
         state = TestState()
 
@@ -1657,7 +1647,7 @@ if __name__ == "__main__":
     if eng == 0:
         mission = TestMissionCFM(engine)
         substitutions = get_cfm56_subs()
-        
+
     if eng == 1:
         mission = TestMissionTASOPT(engine)
         substitutions = get_737800_subs()
@@ -1665,7 +1655,7 @@ if __name__ == "__main__":
     if eng == 2:
         mission = TestMissionGE90(engine)
         substitutions = get_ge90_subs()
-    
+
     if eng == 3:
         mission = TestMissionD82(engine)
         substitutions = get_D82_subs()
