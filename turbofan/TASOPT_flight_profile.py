@@ -43,21 +43,21 @@ class StateLinking(Model):
             for i in range(Ncruise):
                 constraints.extend([
                     cruisestate[varkey][i] == enginestate[varkey][i+Nclimb]
-                    ])           
-        
+                    ])
+
         return constraints
-    
+
 class Mission(Model):
     """
     mission class, links together all subclasses
     """
     def setup(self, Nclimb, Ncruise, substitutions = None, **kwargs):
         eng = 0
-        
+
         # vectorize
         with Vectorize(Nclimb + Ncruise):
             enginestate = FlightState()
-    
+
         #build the submodel
         ac = Aircraft(Nclimb, Ncruise, enginestate, eng)
 
@@ -130,11 +130,11 @@ class Mission(Model):
                 dhftcl == dhftholdcl,
 
                 dhftcr == dhftholdcr,
-                
+
                 sum(cruise['RngCruise']) + sum(climb['RngClimb']) >= ReqRng,
 
                 #compute fuel burn from TSFC
-                cruise['W_{burn}'] == ac['numeng']*ac.engine['TSFC'][Nclimb:] * cruise['thr'] * ac.engine['F'][Nclimb:],              
+                cruise['W_{burn}'] == ac['numeng']*ac.engine['TSFC'][Nclimb:] * cruise['thr'] * ac.engine['F'][Nclimb:],
                 climb['W_{burn}'] == ac['numeng']*ac.engine['TSFC'][:Nclimb] * climb['thr'] * ac.engine['F'][:Nclimb],
 
                 #min climb rate constraint
@@ -189,14 +189,14 @@ if __name__ == '__main__':
     plotRC = False
     plotR = False
     plotAlt = False
-    
+
     M4a = .1025
     fan = 1.685
     lpc  = 1.935
     hpc = 9.369
- 
-        
-    substitutions = {      
+
+
+    substitutions = {
             'ReqRng': 2000, #('sweep', np.linspace(500,2000,4)),
             'numeng': 2,
             'W_{pax}': 91 * 9.81,
@@ -327,7 +327,7 @@ if __name__ == '__main__':
         'V': 1e3*units('knot'),
         'a': 1e3*units('m/s'),
     }
-           
+
     mission = Mission(4, 4)
     m = Model(mission['W_{f_{total}}'], mission, substitutions, x0=x0)
     sol = m.localsolve(solver='mosek', verbosity = 4)
@@ -377,7 +377,7 @@ if __name__ == '__main__':
 
                 'RC_{min}': 1000,
                 }
-        
+
         mission = Mission(4, 4)
         m = Model(mission['W_{f_{total}}'], mission, substitutions, x0=x0)
         solRsweep = m.localsolve(solver='mosek', verbosity = 1, skipsweepfailures=True)
@@ -395,14 +395,14 @@ if __name__ == '__main__':
         plt.title('Cruise Altitude vs Range')
         plt.savefig('engine_Rsweeps/cruise_altitude_range.pdf')
         plt.show()
-        
+
         irc = []
         f = []
         f6 = []
         f8 = []
         totsfc = []
         cruisetsfc = []
-        
+
         i=0
         while i < len(solRsweep('RC')):
             irc.append(mag(solRsweep('RC')[i][0]))
@@ -531,7 +531,7 @@ if __name__ == '__main__':
         plt.show()
 
     if plotAlt == True:
-        substitutions = {      
+        substitutions = {
                 'ReqRng': 2000,
                 'CruiseAlt': ('sweep', np.linspace(30000,40000,20)),
                 'numeng': 1,
@@ -575,7 +575,7 @@ if __name__ == '__main__':
 
                 'RC_{min}': 1000,
                 }
-               
+
         mmission = Mission(2, 2)
         m = Model(mission['W_{f_{total}}'], mission, substitutions)
         solAltsweep = m.localsolve(solver='mosek', verbosity = 4, skipsweepfailures=True)
@@ -727,7 +727,7 @@ if __name__ == '__main__':
 
                 'RC_{min}': ('sweep', np.linspace(1000,8000,45)),
                 }
-        
+
         mission = Mission(2, 2)
         m = Model(mission['W_{f_{total}}'], mission, substitutions)
         solRCsweep = m.localsolve(solver='mosek', verbosity = 1, skipsweepfailures=True)
@@ -852,4 +852,3 @@ if __name__ == '__main__':
         plt.title('Cooling Flow BPR Sensitivity vs Initial Rate of Climb')
         plt.savefig('engine_RCsweeps/alpha_c_sens_alt.pdf')
         plt.show()
-

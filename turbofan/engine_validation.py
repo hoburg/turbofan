@@ -15,6 +15,7 @@ from get_ge90_subs import get_ge90_subs
 class Engine(Model):
     """
     Tasopt engine model
+    SKIP VERIFICATION
     ________
     INPUTS
     res 7 = 0 = Thrust constrained engine, 1 = burner exit temp/turbine entry temp constrained engine
@@ -672,6 +673,7 @@ class Engine(Model):
 class EnginePerformance(Model):
     """
     Engine performance model
+    SKIP VERIFICATION
     """
     def setup(self, engine, state, res7, BLI, **kwargs):
 
@@ -692,6 +694,7 @@ class EnginePerformance(Model):
 class EngineConstants(Model):
     """
     Class of constants used in the engine model
+    SKIP VERIFICATION
     """
     def setup(self, BLI):
         #-----------------------air properties------------------
@@ -716,6 +719,7 @@ class EngineConstants(Model):
 class Compressor(Model):
     """"
     Compressor model
+    SKIP VERIFICATION
     """
     def setup(self):
         #define new variables
@@ -739,6 +743,7 @@ class Compressor(Model):
 class CompressorPerformance(Model):
     """
     combustor perfomrance constraints
+    SKIP VERIFICATION
     """
     def setup(self, comp, engine, state, BLI):
         self.comp = comp
@@ -846,6 +851,7 @@ class CompressorPerformance(Model):
 class Combustor(Model):
     """"
     Combustor model
+    SKIP VERIFICATION
     """
     def setup(self):
         #define new variables
@@ -878,6 +884,7 @@ class Combustor(Model):
 class CombustorPerformance(Model):
     """
     combustor perfomrance constraints
+    SKIP VERIFICATION
     """
     def setup(self, combustor, engine, state, mixing = True):
         self.combustor = combustor
@@ -954,6 +961,7 @@ class CombustorPerformance(Model):
 class Turbine(Model):
     """"
     Turbine model
+    SKIP VERIFICATION
     """
     def setup(self):
         #define new variables
@@ -977,6 +985,7 @@ class Turbine(Model):
 class TurbinePerformance(Model):
     """
     combustor perfomrance constraints
+    SKIP VERIFICATION
     """
     def setup(self, turbine, engine):
         self.turbine = turbine
@@ -1026,6 +1035,7 @@ class TurbinePerformance(Model):
 class FanMap(Model):
     """"
     Fan map model
+    SKIP VERIFICATION
     """
     def setup(self):
         #define new variables
@@ -1042,6 +1052,7 @@ class FanMap(Model):
 class FanMapPerformance(Model):
     """
     Fan map perfomrance constraints
+    SKIP VERIFICATION
     """
     def setup(self, fanmap, engine):
         self.fanmap = fanmap
@@ -1072,6 +1083,7 @@ class FanMapPerformance(Model):
 class LPCMap(Model):
     """"
     LPC map model
+    SKIP VERIFICATION
     """
     def setup(self):
         #define new variables
@@ -1088,6 +1100,7 @@ class LPCMap(Model):
 class LPCMapPerformance(Model):
     """
     LPC map perfomrance constraints
+    SKIP VERIFICATION
     """
     def setup(self, lpcmap, engine):
         self.lpcmap = lpcmap
@@ -1118,6 +1131,7 @@ class LPCMapPerformance(Model):
 class HPCMap(Model):
     """"
     HPC map model
+    SKIP VERIFICATION
     """
     def setup(self):
         #define new variables
@@ -1135,6 +1149,7 @@ class HPCMap(Model):
 class HPCMapPerformance(Model):
     """
     HPC map perfomrance constraints
+    SKIP VERIFICATION
     """
     def setup(self, hpcmap, engine):
         self.hpcmap = hpcmap
@@ -1165,6 +1180,7 @@ class HPCMapPerformance(Model):
 class Thrust(Model):
     """"
     thrust sizing model
+    SKIP VERIFICATION
     """
     def setup(self):
         #define new variables
@@ -1184,6 +1200,7 @@ class Thrust(Model):
 class ThrustPerformance(Model):
     """
     thrust performacne model
+    SKIP VERIFICATION
     """
     def setup(self, thrust, engine, state, BLI):
         self.thrust = thrust
@@ -1279,6 +1296,7 @@ class ThrustPerformance(Model):
 class Sizing(Model):
     """"
     engine sizing model
+    SKIP VERIFICATION
     """
     def setup(self):
         #define new variables
@@ -1318,6 +1336,7 @@ class Sizing(Model):
 class SizingPerformance(Model):
     """
     engine sizing perofrmance model
+    SKIP VERIFICATION
     """
     def setup(self, sizing, engine, compressor, fanmap, lpcmap, hpcmap, state, res7, cooling = True):
         self.sizing = sizing
@@ -1405,6 +1424,7 @@ class SizingPerformance(Model):
 class TestState(Model):
     """
     state class only to be used for testing purposes
+    SKIP VERIFICATION
     """
     def setup(self):
         #define variables
@@ -1431,6 +1451,7 @@ class TestState(Model):
 class TestMissionCFM(Model):
     """
     place holder of a mission calss
+    SKIP VERIFICATION
     """
     def setup(self, engine):
         M2 = .6
@@ -1473,6 +1494,7 @@ class TestMissionCFM(Model):
 class TestMissionTASOPT(Model):
     """
     place holder of a mission calss
+    SKIP VERIFICATION
     """
     def setup(self, engine):
         M2 = .6
@@ -1534,6 +1556,7 @@ class TestMissionTASOPT(Model):
 class TestMissionGE90(Model):
     """
     place holder of a mission calss
+    SKIP VERIFICATION
     """
     def setup(self, engine):
         M2 = .65
@@ -1578,6 +1601,7 @@ class TestMissionGE90(Model):
 class TestMissionD82(Model):
     """
     place holder of a mission calss
+    SKIP VERIFICATION
     """
     def setup(self, engine):
         M2 = .6
