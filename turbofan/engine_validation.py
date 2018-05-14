@@ -920,8 +920,10 @@ class CombustorPerformance(Model):
                 #compute the station 4.1 enthalpy
                 ht41 == self.combustor['C_{p_{c}}'] * Tt41,
 
-                #making f+1 GP compatible --> needed for convergence
+                # making f+1 GP compatible --> needed for convergence
                 SignomialEquality(fp1,f+1),
+                # TCS([fp1 >= f+1]),
+                # Relaxation of this SE makes problem hit iteration limit
 
                 #investigate doing this with a substitution
                 M4a == .1025,
@@ -933,6 +935,7 @@ class CombustorPerformance(Model):
                     fp1*u41 == (u4a*(fp1)*self.combustor['\\alpha_c']*uc)**.5,
                     #this is a stagnation relation...need to fix it to not be signomial
                     SignomialEquality(T41, Tt41-.5*(u41**2)/self.combustor['C_{p_{c}}']),
+                    #TCS([T41 <= Tt41-.5*(u41**2)/self.combustor['C_{p_{c}}']]),
 
                     #here we assume no pressure loss in mixing so P41=P4a
                     Pt41 == P4a*(Tt41/T41)**(ccexp1),
@@ -1656,6 +1659,8 @@ if __name__ == "__main__":
 
     engine = Engine(0, True, N, state, eng)
 
+    engine.substitutions.update({'T_{t_{4.1_{max}}}':1400*units('K')})
+
     if eng == 0:
         mission = TestMissionCFM(engine)
         substitutions = get_cfm56_subs()
@@ -1768,7 +1773,7 @@ if __name__ == "__main__":
 
     #update substitutions and solve
     m.substitutions.update(substitutions)
-    sol = m.localsolve(solver = 'mosek', verbosity = 0)
+    sol = m.localsolve(verbosity = 4)
 
     #print out various percent differences in TSFC and engine areas
     if eng == 0:
