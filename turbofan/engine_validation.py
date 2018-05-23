@@ -111,9 +111,9 @@ class Engine(Model):
                 ]
 
             shaftpower = [
-                #HPT shafter power balance
-                #SIGNOMIAL
-                SignomialEquality(self.constants['M_{takeoff}']*self.turbine['\eta_{HPshaft}']*(1+self.engineP['f'])*(self.engineP['h_{t_{4.1}}']-self.engineP['h_{t_{4.5}}']), self.engineP['h_{t_3}'] - self.engineP['h_{t_{2.5}}']),    #B.161
+                #HPT shaft power balance
+                # relaxed SigEq
+                TCS([self.constants['M_{takeoff}']*self.turbine['\eta_{HPshaft}']*(1+self.engineP['f'])*(self.engineP['h_{t_{4.1}}']-self.engineP['h_{t_{4.5}}']) >= self.engineP['h_{t_3}'] - self.engineP['h_{t_{2.5}}']]),    #B.161
 
                 #LPT shaft power balance
                 #SIGNOMIAL
