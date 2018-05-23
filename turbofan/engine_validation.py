@@ -1638,7 +1638,7 @@ def test():
 
     m = Model((10*engine.engineP.thrustP['TSFC'][0]+engine.engineP.thrustP['TSFC'][1]), [engine, mission], substitutions)
     m.substitutions.update(substitutions)
-    sol = m.localsolve(verbosity = 0)
+    sol = m.localsolve(verbosity = 2)
 
 if __name__ == "__main__":
     """
