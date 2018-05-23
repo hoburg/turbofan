@@ -93,11 +93,12 @@ class Engine(Model):
                 ]
 
             fmix = [
-                #compute f with mixing
+                # compute f with mixing
                 TCS([self.combustor['\\eta_{B}'] * self.engineP['f'] * self.combustor['h_{f}'] >= (1-self.combustor['\\alpha_c'])*self.engineP['h_{t_4}']-(1-self.combustor['\\alpha_c'])*self.engineP['h_{t_3}']+self.combustor['C_{p_{fuel}']*self.engineP['f']*(self.engineP['T_{t_4}']-self.combustor['T_{t_f}'])]),
-                #compute Tt41...mixing causes a temperature drop
-                #had to include Tt4 here to prevent it from being pushed down to zero
-                SignomialEquality(self.engineP['h_{t_{4.1}}']*self.engineP['fp1'], ((1-self.combustor['\\alpha_c']+self.engineP['f'])*self.engineP['h_{t_4}'] + self.combustor['\\alpha_c']*self.engineP['h_{t_3}'])),
+                # compute Tt41...mixing causes a temperature drop
+                # had to include Tt4 here to prevent it from being pushed down to zero
+                # relaxed SigEq
+                TCS([self.engineP['h_{t_{4.1}}']*self.engineP['fp1'] <= ((1-self.combustor['\\alpha_c']+self.engineP['f'])*self.engineP['h_{t_4}'] + self.combustor['\\alpha_c']*self.engineP['h_{t_3}'])]),
 
                 self.engineP['P_{t_4}'] == self.combustor['\\pi_{b}'] * self.engineP['P_{t_3}'],   #B.145
                 ]
@@ -111,12 +112,12 @@ class Engine(Model):
                 ]
 
             shaftpower = [
-                #HPT shaft power balance
+                # HPT shaft power balance
                 # relaxed SigEq
                 TCS([self.constants['M_{takeoff}']*self.turbine['\eta_{HPshaft}']*(1+self.engineP['f'])*(self.engineP['h_{t_{4.1}}']-self.engineP['h_{t_{4.5}}']) >= self.engineP['h_{t_3}'] - self.engineP['h_{t_{2.5}}']]),    #B.161
 
                 #LPT shaft power balance
-                #SIGNOMIAL
+                # SigEq
                 SignomialEquality(self.constants['M_{takeoff}']*self.turbine['\eta_{LPshaft}']*(1+self.engineP['f'])*
                 (self.engineP['h_{t_{4.9}}'] - self.engineP['h_{t_{4.5}}']),-((self.engineP['h_{t_{2.5}}']-self.engineP['h_{t_{1.8}}'])+self.engineP['\\alpha_{+1}']*(self.engineP['h_{t_{2.1}}'] - self.engineP['h_{T_{2}}']))),    #B.165
                 ]
