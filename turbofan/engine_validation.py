@@ -25,6 +25,7 @@ class Engine(Model):
     Nfleet - number of discrete missions in a fleet mission optimization problem, default is 0
     """
     Ttmax = True
+    OPRmax = True
 
     def setup(self, res7, cooling, N, state, eng, Nfleet=0, BLI=False):
         """
@@ -77,6 +78,9 @@ class Engine(Model):
         dlpc = Variable('d_{LPC}', 'm', 'LPC Diameter')
         HTRfSub = Variable('HTR_{f_{SUB}}', '-', '1 - HTRf^2')
         HTRlpcSub = Variable('HTR_{lpc_{SUB}}', '-', '1 - HTRlpc^2')
+
+        #OPRmax
+        OPRmax = Variable('OPR_{max}', '-', 'Maximum OPR')
 
         #make the constraints
         constraints = []
@@ -348,6 +352,8 @@ class Engine(Model):
                 res7list.extend([
                     self.engineP['T_{t_4}'] <= Tt4max,
                     ])
+            if self.OPRmax:
+                res7list.extend([OPR <= OPRmax])
 
         if res7 == 1:
             if cooling:
