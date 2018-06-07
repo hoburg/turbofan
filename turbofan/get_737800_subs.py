@@ -9,6 +9,8 @@ def get_737800_subs():
     hpc = 3.75
 
     substitutions = {
+        'OPR_{max}': 32,
+
         '\\pi_{tn}': .989,
         '\\pi_{b}': .94,
         '\\pi_{d}': .998,

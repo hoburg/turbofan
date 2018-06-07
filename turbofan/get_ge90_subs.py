@@ -10,6 +10,8 @@ def get_ge90_subs():
     hpc = 20.033
 
     substitutions = {
+        'OPR_{max}': 40,
+
         '\\pi_{tn}': .98,
         '\\pi_{b}': .94,
         '\\pi_{d}': .98,

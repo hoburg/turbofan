@@ -9,6 +9,8 @@ def get_cfm56_subs():
     hpc = 9.369
         
     substitutions = {
+        'OPR_{max}': 32,
+
         '\\pi_{tn}': .98,
         '\\pi_{b}': .94,
         '\\pi_{d}': .98,
