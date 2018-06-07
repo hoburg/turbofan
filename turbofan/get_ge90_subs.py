@@ -11,6 +11,7 @@ def get_ge90_subs():
 
     substitutions = {
         'OPR_{max}': 40,
+        'T_{t_{4.1_{max}}}': 1400,
 
         '\\pi_{tn}': .98,
         '\\pi_{b}': .94,

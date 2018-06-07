@@ -10,6 +10,7 @@ def get_737800_subs():
 
     substitutions = {
         'OPR_{max}': 32,
+        'T_{t_{4.1_{max}}}': 1400,
 
         '\\pi_{tn}': .989,
         '\\pi_{b}': .94,

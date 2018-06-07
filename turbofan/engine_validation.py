@@ -1636,15 +1636,12 @@ def test():
     with Vectorize(2):
         state = TestState()
 
-    Engine.Ttmax = False
     engine = Engine(0, True, 2, state, 0)
 
     mission = TestMissionCFM(engine)
 
     substitutions = get_cfm56_subs()
-    engine.substitutions.update({'OPR_{max}':32})
     m = Model((10*engine.engineP.thrustP['TSFC'][0]+engine.engineP.thrustP['TSFC'][1]), [engine, mission], substitutions)
-    m.substitutions.update(substitutions)
     m = relaxed_constants(m)
     sol = m.localsolve(verbosity = 2)
 
@@ -1666,10 +1663,6 @@ if __name__ == "__main__":
         state = TestState()
 
     engine = Engine(0, True, N, state, eng)
-
-    engine.substitutions.update({'T_{t_{4.1_{max}}}':     1400*units('K'),
-                                 'OPR_{max}':             32,
-                                 })
 
     if eng == 0:
         mission = TestMissionCFM(engine)
