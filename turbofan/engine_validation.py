@@ -10,6 +10,10 @@ from get_d82_subs import get_D82_subs
 from cfm56_subs import get_cfm56_subs
 from get_ge90_subs import get_ge90_subs
 
+
+# relaxed constants solve
+from relaxed_constants import relaxed_constants, post_process
+
 #Cp and gamma values estimated from https://www.ohio.edu/mechanical/thermo/property_tables/air/air_Cp_{c}v.html
 
 class Engine(Model):
@@ -117,13 +121,11 @@ class Engine(Model):
 
             shaftpower = [
                 # HPT shaft power balance
-                # relaxed SigEq
-                TCS([self.constants['M_{takeoff}']*self.turbine['\eta_{HPshaft}']*(1+self.engineP['f'])*(self.engineP['h_{t_{4.1}}']-self.engineP['h_{t_{4.5}}']) >= self.engineP['h_{t_3}'] - self.engineP['h_{t_{2.5}}']]),    #B.161
+                TCS([self.constants['M_{takeoff}']*self.turbine['\eta_{HPshaft}']*(self.engineP['fp1'])*(self.engineP['h_{t_{4.1}}']-self.engineP['h_{t_{4.5}}']) >= self.engineP['h_{t_3}'] - self.engineP['h_{t_{2.5}}']]),    #B.161
 
                 #LPT shaft power balance
-                # SigEq
-                SignomialEquality(self.constants['M_{takeoff}']*self.turbine['\eta_{LPshaft}']*(1+self.engineP['f'])*
-                (self.engineP['h_{t_{4.9}}'] - self.engineP['h_{t_{4.5}}']),-((self.engineP['h_{t_{2.5}}']-self.engineP['h_{t_{1.8}}'])+self.engineP['\\alpha_{+1}']*(self.engineP['h_{t_{2.1}}'] - self.engineP['h_{T_{2}}']))),    #B.165
+                TCS([self.constants['M_{takeoff}']*self.turbine['\eta_{LPshaft}']*(self.engineP['fp1'])*
+                (self.engineP['h_{t_{4.5}}'] - self.engineP['h_{t_{4.9}}']) >= self.engineP['h_{t_{2.5}}']-self.engineP['h_{t_{1.8}}']+self.engineP['\\alpha']*(self.engineP['h_{t_{2.1}}'] - self.engineP['h_{T_{2}}'])]),    #B.165
                 ]
 
             hptexit = [
@@ -352,9 +354,6 @@ class Engine(Model):
                 res7list.extend([
                     self.engineP['T_{t_4}'] <= Tt4max,
                     ])
-            if self.OPRmax:
-                res7list.extend([OPR <= OPRmax])
-
         if res7 == 1:
             if cooling:
                 res7list = [
@@ -368,7 +367,9 @@ class Engine(Model):
                     #option #2 constrain the burner exit temperature
                     self.engineP['T_{t_4}'] == Tt4spec,  #B.265
                     ]
-
+        if self.OPRmax:
+            res7list.extend([OPR <= OPRmax])
+            
         if cooling:
             constraints = [weight, diameter, fmix, shaftpower, hptexit, fanmap, lpcmap, hpcmap, opr, thrust, res1, res2, res3, res4, res5, massflux, fanarea, HPCarea, onDest, res7list]
         else:
@@ -1641,9 +1642,10 @@ def test():
     mission = TestMissionCFM(engine)
 
     substitutions = get_cfm56_subs()
-
+    engine.substitutions.update({'OPR_{max}':32})
     m = Model((10*engine.engineP.thrustP['TSFC'][0]+engine.engineP.thrustP['TSFC'][1]), [engine, mission], substitutions)
     m.substitutions.update(substitutions)
+    m = relaxed_constants(m)
     sol = m.localsolve(verbosity = 2)
 
 if __name__ == "__main__":
@@ -1665,7 +1667,9 @@ if __name__ == "__main__":
 
     engine = Engine(0, True, N, state, eng)
 
-    engine.substitutions.update({'T_{t_{4.1_{max}}}':1400*units('K')})
+    engine.substitutions.update({'T_{t_{4.1_{max}}}':     1400*units('K'),
+                                 'OPR_{max}':             32,
+                                 })
 
     if eng == 0:
         mission = TestMissionCFM(engine)
@@ -1779,6 +1783,7 @@ if __name__ == "__main__":
 
     #update substitutions and solve
     m.substitutions.update(substitutions)
+    m = relaxed_constants(m)
     sol = m.localsolve(verbosity = 4)
 
     #print out various percent differences in TSFC and engine areas
