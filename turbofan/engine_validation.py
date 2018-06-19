@@ -178,7 +178,7 @@ class Engine(Model):
                 self.engineP['P_{t_6}'] == self.engineP['P_{t_5}'], #B.183
                 self.engineP['T_{t_6}'] == self.engineP['T_{t_5}'], #B.184
 
-                TCS([self.engineP['F_{6}']/(self.constants['M_{takeoff}']*self.engineP['m_{core}']) + (self.engineP['f']+1)*self.state['V'] <= (self.engineP['fp1'])*self.engineP['u_{6}']]),
+                TCS([self.engineP['F_{6}']/(self.constants['M_{takeoff}']*self.engineP['m_{core}']) + (self.engineP['fp1'])*self.state['V'] <= (self.engineP['fp1'])*self.engineP['u_{6}']]),
 
                 #ISP
                 self.engineP['I_{sp}'] == self.engineP['F_{sp}']*self.state['a']*(self.engineP['\\alpha_{+1}'])/(self.engineP['f']*self.constants['g']),  #B.192
