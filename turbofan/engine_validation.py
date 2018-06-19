@@ -230,7 +230,7 @@ class Engine(Model):
                 #compute fan mas flow
                 self.engineP['m_{fan}'] == self.engineP['\\rho_7']*self.sizing['A_{7}']*self.engineP['u_{7}'],
 
-                self.engineP['m_{total}'] >= self.engineP['m_{fan}'] + self.engineP['m_{core}'],
+                SignomialEquality(self.engineP['m_{total}'],self.engineP['m_{fan}'] + self.engineP['m_{core}']), # [SP] # [SigEq]
                 ]
 
             #component area sizing
