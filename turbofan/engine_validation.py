@@ -1236,8 +1236,6 @@ class ThrustPerformance(Model):
         alpha = Variable('\\alpha', '-', 'By Pass Ratio')
         alphap1 = Variable('\\alpha_{+1}', '-', '1 plus BPR')
 
-        hold = Variable('hold', '-', 'unecessary hold var')
-
         #constraints
         constraints = []
 
@@ -1259,8 +1257,7 @@ class ThrustPerformance(Model):
 
                 #constrain the new BPR
                 alpha == mFan / mCore,
-                hold == alphap1,
-                SignomialEquality(hold, alpha + 1),
+                SignomialEquality(alphap1, alpha + 1),
                 alpha <= self.thrust['\\alpha_{max}'],
 
                 #SIGNOMIAL
