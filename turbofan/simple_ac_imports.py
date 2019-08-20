@@ -1,6 +1,7 @@
 """
 simple aircraft classes to import
 """
+from __future__ import absolute_import
 from gpkit import Model, Variable, units, SignomialsEnabled
 from gpkit.constraints.sigeq import SignomialEquality as SignomialEquality
 from gpkit.tools import te_exp_minus1

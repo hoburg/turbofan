@@ -1,4 +1,6 @@
 "SP Implementation of the TASOPT engine model"
+from __future__ import print_function
+from __future__ import absolute_import
 from gpkit import Model, Variable, SignomialsEnabled, units, Vectorize, SignomialEquality
 from gpkit.constraints.tight import Tight as TCS
 from gpkit.small_scripts import mag
@@ -1785,47 +1787,47 @@ if __name__ == "__main__":
         cruiseerror = 100*(mag(sol('TSFC')[0]) - .6793)/.6793
         weighterror =  100*(mag(sol('W_{engine}').to('lbf'))-5216)/5216
 
-        print "Cruise error"
-        print cruiseerror
-        print "TOC error"
-        print tocerror
-        print "Weight Error"
-        print weighterror
+        print("Cruise error")
+        print(cruiseerror)
+        print("TOC error")
+        print(tocerror)
+        print("Weight Error")
+        print(weighterror)
 
     if eng == 1:
         rotationerror = 100*(mag(sol('TSFC')[0]) - .48434)/.48434
         tocerror = 100*(mag(sol('TSFC')[1]) - .65290)/.65290
         cruiseerror = 100*(mag(sol('TSFC')[2]) - .64009)/.64009
 
-        print rotationerror, tocerror, cruiseerror
+        print(rotationerror, tocerror, cruiseerror)
 
 ##        print 100*(mag(sol('A_{2}').to('m^2'))-1.6026)/1.6026
 ##        print 100*(mag(sol('A_{7}').to('m^2'))-.7423)/.7423
 ##        print 100*(mag(sol('A_{5}').to('m^2'))-.2262)/.2262
-        print "----weight---"
-        print 100*(mag(sol('W_{engine}').to('lbf'))-7870.7)/7870.7
+        print("----weight---")
+        print(100*(mag(sol('W_{engine}').to('lbf'))-7870.7)/7870.7)
 
-        print "TO Tt4.1"
-        print 100*(mag(sol('T_{t_{4.1}}')[0]) - 1658.7)/1658.7
-        print "TOC Tt4.1"
-        print 100*(mag(sol('T_{t_{4.1}}')[1]) - 1605.4)/1605.4
-        print "Cruise Tt4.1"
-        print 100*(mag(sol('T_{t_{4.1}}')[2]) - 1433.8)/1433.8
+        print("TO Tt4.1")
+        print(100*(mag(sol('T_{t_{4.1}}')[0]) - 1658.7)/1658.7)
+        print("TOC Tt4.1")
+        print(100*(mag(sol('T_{t_{4.1}}')[1]) - 1605.4)/1605.4)
+        print("Cruise Tt4.1")
+        print(100*(mag(sol('T_{t_{4.1}}')[2]) - 1433.8)/1433.8)
 
-        print "Cooling deltas"
-        print "TO"
-        print 100*(mag(sol('T_{t_4}')[0]-sol('T_{t_{4.1}}')[0]) - 174.3)/174.3
-        print "TOC"
-        print 100*(mag(sol('T_{t_4}')[1]-sol('T_{t_{4.1}}')[1]) - 178.4)/178.4
-        print "Cruise"
-        print 100*(mag(sol('T_{t_4}')[2]-sol('T_{t_{4.1}}')[2]) - 153.2)/153.2
+        print("Cooling deltas")
+        print("TO")
+        print(100*(mag(sol('T_{t_4}')[0]-sol('T_{t_{4.1}}')[0]) - 174.3)/174.3)
+        print("TOC")
+        print(100*(mag(sol('T_{t_4}')[1]-sol('T_{t_{4.1}}')[1]) - 178.4)/178.4)
+        print("Cruise")
+        print(100*(mag(sol('T_{t_4}')[2]-sol('T_{t_{4.1}}')[2]) - 153.2)/153.2)
 
     if eng == 2:
         tocerror = 100*(mag(sol('TSFC')[1]) - 0.5846)/0.5846
         cruiseerror = 100*(mag(sol('TSFC')[0]) - 0.5418)/0.5418
         weighterror =  100*(mag(sol('W_{engine}').to('lbf'))-17400)/17400
 
-        print tocerror, cruiseerror, weighterror
+        print(tocerror, cruiseerror, weighterror)
 
 
 #code for estimating on design parameters

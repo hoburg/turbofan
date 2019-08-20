@@ -1,5 +1,7 @@
 """Simple commercial aircraft flight profile and aircraft model used in a multi-mission
 optimization example"""
+from __future__ import absolute_import
+from builtins import range
 from numpy import pi
 import numpy as np
 from gpkit import Variable, Model, units, SignomialsEnabled, Vectorize

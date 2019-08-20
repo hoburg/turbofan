@@ -1,4 +1,6 @@
 """Simple commercial aircraft flight profile and aircraft model"""
+from __future__ import absolute_import
+from builtins import range
 from numpy import pi
 import numpy as np
 from gpkit import Variable, Model, units, SignomialsEnabled, Vectorize
@@ -7,8 +9,8 @@ from gpkit.tools import te_exp_minus1
 from gpkit.constraints.tight import Tight as TCS
 import matplotlib.pyplot as plt
 from gpkit.small_scripts import mag
-from simple_ac_imports import Aircraft, CruiseSegment, ClimbSegment, FlightState
-from get_parametric_studies_subs import get_parametric_studies_subs
+from .simple_ac_imports import Aircraft, CruiseSegment, ClimbSegment, FlightState
+from .get_parametric_studies_subs import get_parametric_studies_subs
 
 """
 Models requird to minimze the aircraft total fuel weight. Rate of climb equation taken from John
