@@ -55,6 +55,7 @@ class Engine(Model):
         self.turbine = Turbine(self.constants.vals['hptexp1'],
                                self.constants.vals['lptexp1'])
         self.fanmap = FanMap()
+        # self.fanmap = FanMap(faneta = vals['faneta'], fgamma = vals['fgamma'])
         self.lpcmap = LPCMap()
         self.hpcmap = HPCMap()
         self.thrust = Thrust()
