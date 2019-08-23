@@ -15,10 +15,7 @@ from combustor import Combustor, CombustorPerformance
 from compressor import Compressor, CompressorPerformance
 
 # Import substitution files
-from get_737800_subs import get_737800_subs
-from get_d82_subs import get_D82_subs
-from cfm56_subs import get_cfm56_subs
-from get_ge90_subs import get_ge90_subs
+from subs import get_737800_subs, get_D82_subs, get_cfm56_subs, get_ge90_subs
 from test_missions import (TestMissionCFM, TestMissionTASOPT,
                            TestMissionGE90, TestMissionD82)
 from initial_guess import initialize_guess
@@ -42,22 +39,26 @@ class Engine(Model):
     """
     Ttmax = True
     OPRmax = True
+    vals = []
 
-    def setup(self, res7, cooling, N, state, eng, Nfleet=0, BLI=False):
+    def setup(self, res7, cooling, N, state, eng, Nfleet=0, BLI=False, goption=1):
         """
         setup method for the engine model
         """
-        self.setvals(eng, BLI)
-        self.compressor = Compressor(fexp1, lpcexp1, hpcexp1)
-        self.combustor = Combustor(ccexp1, ccexp2)
-        self.turbine = Turbine(lptexp1, hptexp1)
+        self.constants = EngineConstants(BLI)
+        self.setvals(eng, BLI, goption)
+        self.compressor = Compressor(self.constants.vals['fexp1'],
+                                     self.constants.vals['lpcexp1'],
+                                     self.constants.vals['hpcexp1'])
+        self.combustor = Combustor(self.constants.vals['ccexp1'],
+                                   self.constants.vals['ccexp2'])
+        self.turbine = Turbine(self.constants.vals['hptexp1'],
+                               self.constants.vals['lptexp1'])
         self.fanmap = FanMap()
-        # self.fanmap = FanMap(faneta = vals['faneta'], fgamma = vals['fgamma'])
         self.lpcmap = LPCMap()
         self.hpcmap = HPCMap()
         self.thrust = Thrust()
         self.sizing = Sizing()
-        self.constants = EngineConstants(BLI)
         self.state = state
 
         if Nfleet != 0:
@@ -144,7 +145,8 @@ class Engine(Model):
             hptexit = [
                 #HPT Exit states (station 4.5)
                 self.engineP['P_{t_{4.5}}'] == self.engineP['\\pi_{HPT}'] * self.engineP['P_{t_{4.1}}'],
-                self.engineP['\\pi_{HPT}'] == (self.engineP['T_{t_{4.5}}']/self.engineP['T_{t_{4.1}}'])**(hptexp1),      #turbine efficiency is 0.9
+                self.engineP['\\pi_{HPT}'] == (self.engineP['T_{t_{4.5}}']/
+                                               self.engineP['T_{t_{4.1}}'])**(self.constants.vals['hptexp1']),      #turbine efficiency is 0.9
                 ]
 
             fanmap = [
@@ -396,299 +398,68 @@ class Engine(Model):
         """
         return EnginePerformance(self, state, res7, BLI)
 
-    def setvals(self, eng, BLI):
-        global fgamma, lpcgamma, hpcgamma, ccgamma, lptgamma, hptgamma, faneta, fexp1, LPCeta, lpcexp1, \
-               HPCeta, hpcexp1, ccexp1, ccexp2, LPTeta, lptexp1, HPTeta, hptexp1, sta8gamma, fanexexp, sta6gamma, turbexexp
-        #goption sets the gamma value
+    def setvals(self, eng, BLI, goption):
+        """
+
+        :param eng: 0,..., 4 determines the component efficiencies depending
+                    on engine choice
+        :param BLI: boolean whether the engine ingests boundary layer
+        :param goption: sets gamma value
+        :return: dictionary of exponents and components efficiencies
+        """
+        vd = {}
+        vd['eng'] = eng
+        vd['BLI'] = BLI
         if BLI:
-            fan_eta_reduct = 0.96
+            vd['fan_eta_reduct'] = 0.96
         else:
-            fan_eta_reduct = 1.0
+            vd['fan_eta_reduct'] = 1.0
 
-        goption = 1
-        if eng == 0:
-            """set CFM56 validation exponents"""
-            if goption == 1:
-                fgamma = 1.401
-                lpcgamma = 1.398
-                hpcgamma = 1.354
-                ccgamma = 1.313    #gamma value of air @ 1400 K
-                lptgamma = 1.354
-                hptgamma = 1.318
-            if goption == 0:
-                fgamma = 1.401
-                lpcgamma = 1.398
-                hpcgamma = 1.354
-                ccgamma = 1.313    #gamma value of air @ 1400 K
-                lptgamma = 1.3060
-                hptgamma = 1.2987
-            #Fan
-            faneta = .9005 * fan_eta_reduct
-            fexp1 = (fgamma - 1)/(faneta * fgamma)
+        # Setting engine exponents in sequence of...
+        # Component gas constants
+        gammakeys = ['fgamma', 'lpcgamma', 'hpcgamma', 'ccgamma', 'lptgamma', 'hptgamma',
+                     'sta6gamma', 'sta8gamma']
+        # Component efficiencies
+        etakeys = ['faneta', 'LPCeta', 'HPCeta', 'HPTeta', 'LPTeta']
+        # Exponents
+        expkeys = ['fexp1', 'lpcexp1', 'hpcexp1',
+                   'ccexp1', 'ccexp2', 'lptexp1',
+                   'hptexp1', 'fanexexp', 'turbexexp']
+        goption0 = [1.401, 1.398, 1.354, 1.313, 1.306, 1.299, 1.4, 1.387]
+        goption1 = [1.401, 1.398, 1.354, 1.313, 1.354, 1.318, 1.4, 1.387]
+        # Different engine numbers set the component efficiencies for the different engines
+        etas = dict(zip([0,1,2,3,4],[
+                        [.9005, .9306, .9030, .8731, .8851], #CFM56
+                        [.8948, .8800, .8700, .8990, .8890], #TASOPT CFM56 for 737-800
+                        [.9153, .9037, .9247, .9121, .9228], #GE90
+                        [.9300, .9200, .8900, .9100, .9200], #D8, 37 size
+                        [.9100, .9000, .8900, .9000, .9000]]))#TASOPT 777-300ER
+        # Note: ccgamma = gamma value of air @ 1400 K
+        if goption == 0:
+            vd.update(dict.zip(gammakeys, goption0))
+        else:
+            vd.update(dict(zip(gammakeys, goption1)))
 
-            #LPC
-            LPCeta = .9306
-            lpcexp1 = (lpcgamma - 1)/(LPCeta * lpcgamma)
+        # Updating component efficiencies depending on engine
+        vd.update(dict(zip(etakeys, etas[eng])))
 
-            #HPC
-            HPCeta = .9030
-            hpcexp1 = (hpcgamma - 1)/(HPCeta * hpcgamma)
-
-            #combustor cooling exponents
-            ccexp1 = ccgamma/(1 - ccgamma)
-            ccexp2 = -ccgamma/(1 - ccgamma)
-
-            #Turbines
-            #LPT
-            LPTeta = .8851
-            lptexp1 = lptgamma * LPTeta / (lptgamma - 1)
-
-            #HPT
-            HPTeta = .8731
-            hptexp1 = hptgamma * HPTeta / (hptgamma - 1)
-
-            #Exhaust and Thrust
-            #station 8, fan exit
-            sta8gamma = 1.4
-            fanexexp = (sta8gamma - 1)/ sta8gamma
-
-            #station 6, turbine exit
-            sta6gamma = 1.387
-            turbexexp = (sta6gamma - 1) / sta6gamma
-
-        if eng == 1:
-            """set TASOPT CFM56 validation exponents"""
-            if goption == 1:
-                fgamma = 1.401
-                lpcgamma = 1.398
-                hpcgamma = 1.354
-                ccgamma = 1.313    #gamma value of air @ 1400 K
-                lptgamma = 1.354
-                hptgamma = 1.318
-            if goption == 0:
-                fgamma = 1.401
-                lpcgamma = 1.398
-                hpcgamma = 1.354
-                ccgamma = 1.313    #gamma value of air @ 1400 K
-                lptgamma = 1.3060
-                hptgamma = 1.2987
-
-            #Fan
-            faneta = .8948 * fan_eta_reduct
-            fexp1 = (fgamma - 1)/(faneta * fgamma)
-
-            #LPC
-            LPCeta = .88
-            lpcexp1 = (lpcgamma - 1)/(LPCeta * lpcgamma)
-
-            #HPC
-            HPCeta = .87
-            hpcexp1 = (hpcgamma - 1)/(HPCeta * hpcgamma)
-
-            #combustor cooling exponents
-            ccexp1 = ccgamma/(1 - ccgamma)
-            ccexp2 = -ccgamma/(1 - ccgamma)
-
-            #Turbines
-            #LPT
-            LPTeta = .889
-            lptexp1 = lptgamma * LPTeta / (lptgamma - 1)
-
-            #HPT
-            HPTeta = .899
-            hptexp1 = hptgamma * HPTeta / (hptgamma - 1)
-
-            #Exhaust and Thrust
-            #station 8, fan exit
-            sta8gamma = 1.4
-            fanexexp = (sta8gamma - 1)/ sta8gamma
-
-            #station 6, turbine exit
-            sta6gamma = 1.387
-            turbexexp = (sta6gamma - 1) / sta6gamma
-
-        if eng == 3:
-            #option used for a D8 engine
-            if goption == 1:
-                fgamma = 1.401
-                lpcgamma = 1.398
-                hpcgamma = 1.354
-                ccgamma = 1.313    #gamma value of air @ 1400 K
-                lptgamma = 1.354
-                hptgamma = 1.318
-            if goption == 0:
-                fgamma = 1.401
-                lpcgamma = 1.398
-                hpcgamma = 1.354
-                ccgamma = 1.313    #gamma value of air @ 1400 K
-                lptgamma = 1.3060
-                hptgamma = 1.2987
-
-            #Fan
-            faneta = .93 * fan_eta_reduct
-            fgamma = 1.4
-
-            fexp1 = (fgamma - 1)/(faneta * fgamma)
-
-            #LPC
-            lpcgamma = 1.398
-            LPCeta = .92
-
-            lpcexp1 = (lpcgamma - 1)/(LPCeta * lpcgamma)
-
-            #HPC
-            HPCeta = .89
-            hpcgamma = 1.354
-
-            hpcexp1 = (hpcgamma - 1)/(HPCeta * hpcgamma)
-
-            #combustor cooling exponents
-            ccgamma = 1.313    #gamma value of air @ 1400 K
-
-            ccexp1 = ccgamma/(1 - ccgamma)
-            ccexp2 = -ccgamma/(1 - ccgamma)
-
-            #Turbines
-            #LPT
-            lptgamma = 1.354
-            LPTeta = .92
-            lptexp1 = lptgamma * LPTeta / (lptgamma - 1)
-
-            #HPT
-            hptgamma = 1.318
-            HPTeta = .91
-            hptexp1 = hptgamma * HPTeta / (hptgamma - 1)
-
-            #Exhaust and Thrust
-            #station 8, fan exit
-            sta8gamma = 1.4
-            fanexexp = (sta8gamma - 1)/ sta8gamma
-
-            #station 6, turbine exit
-            sta6gamma = 1.387
-            turbexexp = (sta6gamma - 1) / sta6gamma
-
-        if eng == 2:
-            """set GE90 exponents"""
-            if goption == 1:
-                fgamma = 1.401
-                lpcgamma = 1.398
-                hpcgamma = 1.354
-                ccgamma = 1.313    #gamma value of air @ 1400 K
-                lptgamma = 1.354
-                hptgamma = 1.318
-            if goption == 0:
-                fgamma = 1.401
-                lpcgamma = 1.398
-                hpcgamma = 1.354
-                ccgamma = 1.313    #gamma value of air @ 1400 K
-                lptgamma = 1.3060
-                hptgamma = 1.2987
-
-            #Fan
-            faneta = .9153 * fan_eta_reduct
-            fgamma = 1.4
-
-            fexp1 = (fgamma - 1)/(faneta * fgamma)
-
-            #LPC
-            lpcgamma = 1.398
-            LPCeta = .9037
-
-            lpcexp1 = (lpcgamma - 1)/(LPCeta * lpcgamma)
-
-            #HPC
-            HPCeta = .9247
-            hpcgamma = 1.354
-
-            hpcexp1 = (hpcgamma - 1)/(HPCeta * hpcgamma)
-
-            #combustor cooling exponents
-            ccgamma = 1.313    #gamma value of air @ 1400 K
-
-            ccexp1 = ccgamma/(1 - ccgamma)
-            ccexp2 = -ccgamma/(1 - ccgamma)
-
-            #Turbines
-            #LPT
-            lptgamma = 1.354
-            LPTeta = .9228
-            lptexp1 = lptgamma * LPTeta / (lptgamma - 1)
-
-            #HPT
-            hptgamma = 1.318
-            HPTeta = .9121
-            hptexp1 = hptgamma * HPTeta / (hptgamma - 1)
-
-            #Exhaust and Thrust
-            #station 8, fan exit
-            sta8gamma = 1.4
-            fanexexp = (sta8gamma - 1)/ sta8gamma
-
-            #station 6, turbine exit
-            sta6gamma = 1.387
-            turbexexp = (sta6gamma - 1) / sta6gamma
-
-        if eng == 4:
-            """TASOPT 777 vals"""
-            if goption == 1:
-                fgamma = 1.401
-                lpcgamma = 1.398
-                hpcgamma = 1.354
-                ccgamma = 1.313    #gamma value of air @ 1400 K
-                lptgamma = 1.354
-                hptgamma = 1.318
-            if goption == 0:
-                fgamma = 1.401
-                lpcgamma = 1.398
-                hpcgamma = 1.354
-                ccgamma = 1.313    #gamma value of air @ 1400 K
-                lptgamma = 1.3060
-                hptgamma = 1.2987
-
-            #Fan
-            faneta = .91 * fan_eta_reduct
-            fgamma = 1.4
-
-            fexp1 = (fgamma - 1)/(faneta * fgamma)
-
-            #LPC
-            lpcgamma = 1.398
-            LPCeta = .90
-
-            lpcexp1 = (lpcgamma - 1)/(LPCeta * lpcgamma)
-
-            #HPC
-            HPCeta = .89
-            hpcgamma = 1.354
-
-            hpcexp1 = (hpcgamma - 1)/(HPCeta * hpcgamma)
-
-            #combustor cooling exponents
-            ccgamma = 1.313    #gamma value of air @ 1400 K
-
-            ccexp1 = ccgamma/(1 - ccgamma)
-            ccexp2 = -ccgamma/(1 - ccgamma)
-
-            #Turbines
-            #LPT
-            lptgamma = 1.354
-            LPTeta = .90
-            lptexp1 = lptgamma * LPTeta / (lptgamma - 1)
-
-            #HPT
-            hptgamma = 1.318
-            HPTeta = .90
-            hptexp1 = hptgamma * HPTeta / (hptgamma - 1)
-
-            #Exhaust and Thrust
-            #station 8, fan exit
-            sta8gamma = 1.4
-            fanexexp = (sta8gamma - 1)/ sta8gamma
-
-            #station 6, turbine exit
-            sta6gamma = 1.387
-            turbexexp = (sta6gamma - 1) / sta6gamma
+        exps = [# fan exponent
+                (vd['fgamma'] - 1)/(vd['faneta'] * vd['fgamma']),
+                # compressor exponents
+                (vd['lpcgamma'] - 1)/(vd['LPCeta'] * vd['lpcgamma']),
+                (vd['hpcgamma'] - 1)/(vd['HPCeta'] * vd['hpcgamma']),
+                # combustor cooling exponents
+                vd['ccgamma']/(1 - vd['ccgamma']),
+                -vd['ccgamma']/(1 - vd['ccgamma']),
+                # turbine exponents
+                vd['lptgamma'] * vd['LPTeta'] / (vd['lptgamma'] - 1),
+                vd['hptgamma'] * vd['HPTeta'] / (vd['hptgamma'] - 1),
+                # fan exit exponent (station 8)
+                (vd['sta8gamma'] - 1)/ vd['sta8gamma'],
+                # turbine exit exponent (station 6)
+                (vd['sta6gamma'] - 1) / vd['sta6gamma']]
+        vd.update(dict(zip(expkeys, exps)))
+        self.constants.vals = vd
 
 class EnginePerformance(Model):
     """
@@ -757,7 +528,7 @@ class Thrust(Model):
 
 class ThrustPerformance(Model):
     """
-    thrust performacne model
+    thrust performance model
     """
     def setup(self, thrust, engine, state, BLI):
         self.thrust = thrust
@@ -770,7 +541,7 @@ class ThrustPerformance(Model):
         ht8 = Variable('h_{t_8}', 'J/kg', 'Fan Exhaust Stagnation Enthalpy')
         h8 = Variable('h_{8}', 'J/kg', 'Fan Exhasut Static Enthalpy')
         Tt8 = Variable('T_{t_8}', 'K', 'Fan Exhaust Stagnation Temperature (8)')
-        T8 = Variable('T_{8}', 'K', 'Fan Exhaust Sttic Temperature (8)')
+        T8 = Variable('T_{8}', 'K', 'Fan Exhaust Static Temperature (8)')
 
         #-----------------core exhaust (station 6) state variables-------------
         P6 = Variable('P_{6}', 'kPa', 'Core Exhaust Static Pressure')
@@ -778,7 +549,7 @@ class ThrustPerformance(Model):
         Tt6 = Variable('T_{t_6}', 'K', 'Core Exhaust Stagnation Temperature (6)')
         T6 = Variable('T_{6}', 'K', 'Core Exhaust Static Temperature (6)')
         ht6 = Variable('h_{t_6}', 'J/kg', 'Core Exhaust Stagnation Enthalpy')
-        h6 = Variable('h_6', 'J/kg', 'Core Exhasut Static Enthalpy')
+        h6 = Variable('h_6', 'J/kg', 'Core Exhaust Static Enthalpy')
 
         #thrust variables
         F8 = Variable('F_{8}', 'N', 'Fan Thrust')
@@ -809,12 +580,12 @@ class ThrustPerformance(Model):
                 P8 == state["P_{atm}"],
                 h8 == self.thrust['C_{p_{fex}'] * T8,
                 Tight([u8**2 + 2*h8 <= 2*ht8]),
-                (P8/Pt8)**(fanexexp) == T8/Tt8,
+                (P8/Pt8)**(self.engine.vals['fanexexp']) == T8/Tt8,
                 ht8 == self.thrust['C_{p_{fex}'] * Tt8,
 
                 #core exhaust
                 P6 == state["P_{atm}"],   #B.4.11 intro
-                (P6/Pt6)**(turbexexp) == T6/Tt6,
+                (P6/Pt6)**(self.engine.vals['turbexexp']) == T6/Tt6,
                 Tight([u6**2 + 2*h6 <= 2*ht6]),
                 h6 == self.thrust['C_{p_{tex}'] * T6,
                 ht6 == self.thrust['C_{p_{tex}'] * Tt6,
@@ -888,7 +659,7 @@ class Sizing(Model):
 
 class SizingPerformance(Model):
     """
-    engine sizing perofrmance model
+    engine sizing performance model
     """
     def setup(self, sizing, engine, compressor, fanmap, lpcmap, hpcmap, state, res7, cooling = True):
         self.sizing = sizing

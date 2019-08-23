@@ -5,6 +5,7 @@ from gpkit import Variable, Model, units
 
 class TestMissionCFM(Model):
     def setup(self, engine):
+        self.engine = engine
         M2 = .6
         M25 = .6
         M4a = .1025
@@ -44,6 +45,7 @@ class TestMissionCFM(Model):
 
 class TestMissionTASOPT(Model):
     def setup(self, engine):
+        self.engine = engine
         M2 = .6
         M25 = .6
         M4a = .1025
@@ -102,6 +104,7 @@ class TestMissionTASOPT(Model):
 
 class TestMissionGE90(Model):
     def setup(self, engine):
+        self.engine = engine
         M2 = .65
         M25 = .6
         M4a = .1025
@@ -143,6 +146,7 @@ class TestMissionGE90(Model):
 
 class TestMissionD82(Model):
     def setup(self, engine):
+        self.engine = engine
         M2 = .6
         M25 = .6
         M4a = .1025
