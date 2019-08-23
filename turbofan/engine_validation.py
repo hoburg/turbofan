@@ -1,17 +1,21 @@
 "SP Implementation of the TASOPT engine model"
 from __future__ import print_function
 from __future__ import absolute_import
-from gpkit import Model, Variable, SignomialsEnabled, units, Vectorize, SignomialEquality
+from gpkit import (Model, Variable, SignomialsEnabled, units,
+                   Vectorize, SignomialEquality)
 from gpkit.constraints.tight import Tight as TCS
 from gpkit.small_scripts import mag
 import numpy as np
 
-#import substitution files
+# Import engine components and maps
+from maps import (FanMap, FanMapPerformance, HPCMap, HPCMapPerformance,
+                  LPCMap, LPCMapPerformance)
+
+# Import substitution files
 from get_737800_subs import get_737800_subs
 from get_d82_subs import get_D82_subs
 from cfm56_subs import get_cfm56_subs
 from get_ge90_subs import get_ge90_subs
-
 
 # relaxed constants solve
 from relaxed_constants import relaxed_constants, post_process
@@ -1035,145 +1039,6 @@ class TurbinePerformance(Model):
 
         return constraints
 
-class FanMap(Model):
-    """"
-    Fan map model
-    """
-    def setup(self):
-        #define new variables
-        #------------------Fan map variables----------------
-        mFanBarD = Variable('\\bar{m}_{fan_{D}}', 'kg/s', 'Fan On-Design Corrected Mass Flow')
-        piFanD = Variable('\\pi_{f_D}', '-', 'On-Design Pressure Ratio')
-
-    def dynamic(self, engine):
-        """
-        creates an instance of the fan map performance model
-        """
-        return FanMapPerformance(self, engine)
-
-class FanMapPerformance(Model):
-    """
-    Fan map perfomrance constraints
-    """
-    def setup(self, fanmap, engine):
-        self.fanmap = fanmap
-        self.engine = engine
-
-        #define new variables
-        #-----------------------Fan Map Variables--------------------
-        #Mass Flow Variables
-        mf = Variable('m_{f}', 'kg/s', 'Fan Corrected Mass Flow')
-        mtildf = Variable('m_{tild_f}', '-', 'Fan Normalized Mass Flow')
-
-        #----------------------Compressor Speeds--------------------
-        #Speed Variables...by setting the design speed to be 1 since only ratios are
-        #imporant I was able to drop out all the other speeds
-        Nf = Variable('N_{f}', '-', 'Fan Speed')
-
-        #make the constraints
-        constraints = []
-
-        #fan map
-        constraints.extend([
-            #define mtild
-            mtildf == mf/self.fanmap['\\bar{m}_{fan_{D}}'],   #B.282
-            ])
-
-        return constraints
-
-class LPCMap(Model):
-    """"
-    LPC map model
-    """
-    def setup(self):
-        #define new variables
-        #-----------------LPC map variables-------------------
-        mlcD = Variable('m_{lc_D}', 'kg/s', 'On Design LPC Corrected Mass Flow')
-        pilcD = Variable('\pi_{lc_D}', '-', 'LPC On-Design Pressure Ratio')
-
-    def dynamic(self, engine):
-        """
-        creates an instance of the HPC map performance model
-        """
-        return LPCMapPerformance(self, engine)
-
-class LPCMapPerformance(Model):
-    """
-    LPC map perfomrance constraints
-    """
-    def setup(self, lpcmap, engine):
-        self.lpcmap = lpcmap
-        self.engine = engine
-
-        #define new variables
-        #-------------------------LPC Map Variables-------------------------
-        #Mass Flow Variables
-        mlc = Variable('m_{lc}', 'kg/s', 'LPC Corrected Mass Flow')
-        mtildlc = Variable('m_{tild_lc}', '-', 'LPC Normalized Mass Flow')
-
-        #----------------------Compressor Speeds--------------------
-        #Speed Variables...by setting the design speed to be 1 since only ratios are
-        #imporant I was able to drop out all the other speeds
-        N1 = Variable('N_{1}', '-', 'LPC Speed')
-
-        #make the constraints
-        constraints = []
-
-        #LPC map
-        constraints.extend([
-            #define mtild
-            mtildlc == mlc/self.lpcmap['m_{lc_D}'],   #B.282
-        ])
-
-        return constraints
-
-class HPCMap(Model):
-    """"
-    HPC map model
-    """
-    def setup(self):
-        #define new variables
-        #-----------------HPC map variables-----------
-        mhcD = Variable('m_{hc_D}', 'kg/s', 'On Design HPC Corrected Mass Flow')
-        pihcD = Variable('\\pi_{hc_D}', '-', 'HPC On-Design Pressure Ratio')
-        mhcD = Variable('m_{hc_D}', 'kg/s', 'On Design HPC Corrected Mass Flow')
-
-    def dynamic(self, engine):
-        """
-        creates an instance of the HPC map performance model
-        """
-        return HPCMapPerformance(self, engine)
-
-class HPCMapPerformance(Model):
-    """
-    HPC map perfomrance constraints
-    """
-    def setup(self, hpcmap, engine):
-        self.hpcmap = hpcmap
-        self.engine = engine
-
-        #define new variables
-        #--------------------------HPC Map Variables------------------
-        #Mass Flow Variables
-        mhc = Variable('m_{hc}', 'kg/s', 'HPC Corrected Mass Flow')
-        mtildhc = Variable('m_{tild_{hc}}', '-', 'HPC Normalized Mass Flow')
-
-        #----------------------Compressor Speeds--------------------
-        #Speed Variables...by setting the design speed to be 1 since only ratios are
-        #imporant I was able to drop out all the other speeds
-        N2 = Variable('N_{2}', '-', 'HPC Speed')
-
-        #make the constraints
-        constraints = []
-
-        #HPC map
-        constraints.extend([
-            #define mtild
-            mtildhc == mhc/self.hpcmap['m_{hc_D}'],   #B.282
-            ])
-
-        return constraints
-
 class Thrust(Model):
     """"
     thrust sizing model
@@ -1181,7 +1046,7 @@ class Thrust(Model):
     def setup(self):
         #define new variables
         #fan and exhaust
-        Cptex =Variable('C_{p_{tex}', 1029, 'J/kg/K', "Cp Value for Combustion Products at Core Exhaust") #500K, gamma = 1.387
+        Cptex = Variable('C_{p_{tex}', 1029, 'J/kg/K', "Cp Value for Combustion Products at Core Exhaust") #500K, gamma = 1.387
         Cpfanex = Variable('C_{p_{fex}', 1005, 'J/kg/K', "Cp Value for Air at 300K") #gamma =1.4        #heat of combustion of jet fuel
 
         #max by pass ratio
