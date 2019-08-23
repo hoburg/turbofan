@@ -4,10 +4,9 @@ class Turbine(Model):
     """"
     Turbine model
     """
-    def setup(self, **kwargs):
-        # 'Globals'
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+    def setup(self, lptexp1, hptexp1):
+        self.lptexp1 = lptexp1
+        self.hptexp1 = hptexp1
         #define new variables
         #turbines
         Cpt1 = Variable('C_{p_{t1}}', 1280, 'J/kg/K', "Cp Value for Combustion Products in HP Turbine") #1300K gamma = 1.318

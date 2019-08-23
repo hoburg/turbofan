@@ -3,7 +3,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 from gpkit import (Model, Variable, SignomialsEnabled, units,
                    Vectorize, SignomialEquality)
-from gpkit.constraints.tight import Tight as TCS
+from gpkit.constraints.tight import Tight
 from gpkit.small_scripts import mag
 import numpy as np
 
@@ -11,6 +11,7 @@ import numpy as np
 from maps import (FanMap, FanMapPerformance, HPCMap, HPCMapPerformance,
                   LPCMap, LPCMapPerformance)
 from turbine import Turbine, TurbinePerformance
+from combustor import Combustor, CombustorPerformance
 
 # Import substitution files
 from get_737800_subs import get_737800_subs
@@ -44,9 +45,10 @@ class Engine(Model):
         """
         self.setvals(eng, BLI)
         self.compressor = Compressor()
-        self.combustor = Combustor()
-        self.turbine = Turbine(LPTeta=LPTeta, lptexp1=lptexp1)
+        self.combustor = Combustor(ccexp1, ccexp2)
+        self.turbine = Turbine(lptexp1, hptexp1)
         self.fanmap = FanMap()
+        # self.fanmap = FanMap(faneta = vals['faneta'], fgamma = vals['fgamma'])
         self.lpcmap = LPCMap()
         self.hpcmap = HPCMap()
         self.thrust = Thrust()
@@ -109,11 +111,11 @@ class Engine(Model):
 
             fmix = [
                 # compute f with mixing
-                TCS([self.combustor['\\eta_{B}'] * self.engineP['f'] * self.combustor['h_{f}'] >= (1-self.combustor['\\alpha_c'])*self.engineP['h_{t_4}']-(1-self.combustor['\\alpha_c'])*self.engineP['h_{t_3}']+self.combustor['C_{p_{fuel}']*self.engineP['f']*(self.engineP['T_{t_4}']-self.combustor['T_{t_f}'])]),
+                Tight([self.combustor['\\eta_{B}'] * self.engineP['f'] * self.combustor['h_{f}'] >= (1-self.combustor['\\alpha_c'])*self.engineP['h_{t_4}']-(1-self.combustor['\\alpha_c'])*self.engineP['h_{t_3}']+self.combustor['C_{p_{fuel}']*self.engineP['f']*(self.engineP['T_{t_4}']-self.combustor['T_{t_f}'])]),
                 # compute Tt41...mixing causes a temperature drop
                 # had to include Tt4 here to prevent it from being pushed down to zero
                 # relaxed SigEq
-                TCS([self.engineP['h_{t_{4.1}}']*self.engineP['fp1'] <= ((1-self.combustor['\\alpha_c']+self.engineP['f'])*self.engineP['h_{t_4}'] + self.combustor['\\alpha_c']*self.engineP['h_{t_3}'])]),
+                Tight([self.engineP['h_{t_{4.1}}']*self.engineP['fp1'] <= ((1-self.combustor['\\alpha_c']+self.engineP['f'])*self.engineP['h_{t_4}'] + self.combustor['\\alpha_c']*self.engineP['h_{t_3}'])]),
 
                 self.engineP['P_{t_4}'] == self.combustor['\\pi_{b}'] * self.engineP['P_{t_3}'],   #B.145
                 ]
@@ -121,17 +123,17 @@ class Engine(Model):
             fnomix = [
                 #only if mixing = false
                 #compute f without mixing, overestimation if there is cooling
-                TCS([self.combustor['\\eta_{B}'] * self.engineP['f'] * self.combustor['h_{f}'] + self.engineP['h_{t_3}'] >= self.engineP['h_{t_4}']]),
+                Tight([self.combustor['\\eta_{B}'] * self.engineP['f'] * self.combustor['h_{f}'] + self.engineP['h_{t_3}'] >= self.engineP['h_{t_4}']]),
 
                 self.engineP['P_{t_4}'] == self.combustor['\\pi_{b}'] * self.engineP['P_{t_3}'],   #B.145
                 ]
 
             shaftpower = [
                 # HPT shaft power balance
-                TCS([self.constants['M_{takeoff}']*self.turbine['\eta_{HPshaft}']*(self.engineP['fp1'])*(self.engineP['h_{t_{4.1}}']-self.engineP['h_{t_{4.5}}']) >= self.engineP['h_{t_3}'] - self.engineP['h_{t_{2.5}}']]),    #B.161
+                Tight([self.constants['M_{takeoff}']*self.turbine['\eta_{HPshaft}']*(self.engineP['fp1'])*(self.engineP['h_{t_{4.1}}']-self.engineP['h_{t_{4.5}}']) >= self.engineP['h_{t_3}'] - self.engineP['h_{t_{2.5}}']]),    #B.161
 
                 #LPT shaft power balance
-                TCS([self.constants['M_{takeoff}']*self.turbine['\eta_{LPshaft}']*(self.engineP['fp1'])*
+                Tight([self.constants['M_{takeoff}']*self.turbine['\eta_{LPshaft}']*(self.engineP['fp1'])*
                 (self.engineP['h_{t_{4.5}}'] - self.engineP['h_{t_{4.9}}']) >= self.engineP['h_{t_{2.5}}']-self.engineP['h_{t_{1.8}}']+self.engineP['\\alpha']*(self.engineP['h_{t_{2.1}}'] - self.engineP['h_{T_{2}}'])]),    #B.165
                 ]
 
@@ -185,7 +187,7 @@ class Engine(Model):
                 self.engineP['P_{t_6}'] == self.engineP['P_{t_5}'], #B.183
                 self.engineP['T_{t_6}'] == self.engineP['T_{t_5}'], #B.184
 
-                TCS([self.engineP['F_{6}']/(self.constants['M_{takeoff}']*self.engineP['m_{core}']) + (self.engineP['fp1'])*self.state['V'] <= (self.engineP['fp1'])*self.engineP['u_{6}']]),
+                Tight([self.engineP['F_{6}']/(self.constants['M_{takeoff}']*self.engineP['m_{core}']) + (self.engineP['fp1'])*self.state['V'] <= (self.engineP['fp1'])*self.engineP['u_{6}']]),
 
                 #ISP
                 self.engineP['I_{sp}'] == self.engineP['F_{sp}']*self.state['a']*(self.engineP['\\alpha_{+1}'])/(self.engineP['f']*self.constants['g']),  #B.192
@@ -753,7 +755,7 @@ class Compressor(Model):
 
 class CompressorPerformance(Model):
     """
-    combustor perfomrance constraints
+    compressor performance constraints
     """
     def setup(self, comp, engine, state, BLI):
         self.comp = comp
@@ -858,118 +860,6 @@ class CompressorPerformance(Model):
 
         return diffuser, fan, lpc, hpc
 
-class Combustor(Model):
-    """"
-    Combustor model
-    """
-    def setup(self):
-        #define new variables
-        Cpc = Variable('C_{p_{c}}', 1216, 'J/kg/K', "Cp Value for Fuel/Air Mix in Combustor") #1400K, gamma equals 1.312
-        Cpfuel = Variable('C_{p_{fuel}', 2010, 'J/kg/K', 'Specific Heat Capacity of Kerosene (~Jet Fuel)')
-        hf = Variable('h_{f}', 43.003, 'MJ/kg', 'Heat of Combustion of Jet Fuel')     #http://hypeRbook.com/facts/2003/EvelynGofman.shtml...prob need a better source
-
-        #-------------------------diffuser pressure ratios--------------------------
-        pib = Variable('\\pi_{b}', '-', 'Burner Pressure Ratio')
-
-        #---------------------------efficiencies & takeoffs-----------------------
-        etaB = Variable('\\eta_{B}', '-', 'Burner Efficiency')
-
-        #------------------------Variables for cooling flow model---------------------------
-        #cooling flow bypass ratio
-        ac = Variable('\\alpha_c', '-', 'Total Cooling Flow Bypass Ratio')
-        #variables for cooling flow velocity
-        ruc = Variable('r_{uc}', '-', 'User Specified Cooling Flow Velocity Ratio')
-
-        hold4a = Variable('hold_{4a}', '-', '1+(gamma-1)/2 * M_4a**2')
-
-        Ttf = Variable('T_{t_f}', 'K', 'Incoming Fuel Total Temperature')
-
-    def dynamic(self, engine, state):
-        """
-        creates an instance of the fan map performance model
-        """
-        return CombustorPerformance(self, engine, state)
-
-class CombustorPerformance(Model):
-    """
-    combustor perfomrance constraints
-    """
-    def setup(self, combustor, engine, state, mixing = True):
-        self.combustor = combustor
-        self.engine = engine
-
-        #define new variables
-        #--------------------------combustor exit (station 4) stagnation states------------------
-        Pt4 = Variable('P_{t_4}', 'kPa', 'Stagnation Pressure at the Combustor Exit (4)')
-        ht4 = Variable('h_{t_4}', 'J/kg', 'Stagnation Enthalpy at the Combustor Exit (4)')
-        Tt4 = Variable('T_{t_4}', 'K', 'Combustor Exit (Station 4) Stagnation Temperature')
-
-        #--------------------High Pressure Turbine inlet state variables (station 4.1)-------------------------
-        Pt41 = Variable('P_{t_{4.1}}', 'kPa', 'Stagnation Pressure at the Turbine Inlet (4.1)')
-        Tt41 = Variable('T_{t_{4.1}}', 'K', 'Stagnation Temperature at the Turbine Inlet (4.1)')
-        ht41 = Variable('h_{t_{4.1}}', 'J/kg', 'Stagnation Enthalpy at the Turbine Inlet (4.1)')
-        u41 = Variable('u_{4.1}', 'm/s', 'Flow Velocity at Station 4.1')
-        T41 = Variable('T_{4.1}', 'K', 'Static Temperature at the Turbine Inlet (4.1)')
-
-        #------------------------Variables for cooling flow model---------------------------
-        # define the (f+1) variable, limits the number of signomials
-        # for station 4a
-        u4a = Variable('u_{4a}', 'm/s', 'Flow Velocity at Station 4a')
-        M4a = Variable('M_{4a}', '-', 'User Specified Station 4a Mach #')
-        P4a = Variable('P_{4a}', 'kPa', 'Static Pressure at Station 4a (4a)')
-        uc = Variable('u_c', 'm/s', 'Cooling Airflow Speed at Station 4a')
-
-        #---------------------------fuel flow fraction f--------------------------------
-        f = Variable('f', '-', 'Fuel Air Mass Flow Fraction')
-        fp1 = Variable('fp1', '-', 'f + 1')
-
-        #make the constraints
-        constraints = []
-
-        with SignomialsEnabled():
-            #combustor constraints
-            constraints.extend([
-                #flow through combustor
-                ht4 == self.combustor['C_{p_{c}}'] * Tt4,
-
-                #compute the station 4.1 enthalpy
-                ht41 == self.combustor['C_{p_{c}}'] * Tt41,
-
-                # making f+1 GP compatible --> needed for convergence
-                SignomialEquality(fp1,f+1),
-                # TCS([fp1 >= f+1]),
-                # Relaxation of this SE makes problem hit iteration limit
-
-                #investigate doing this with a substitution
-                M4a == .1025,
-                ])
-
-            #mixing constraints
-            if mixing:
-                constraints.extend([
-                    fp1*u41 == (u4a*(fp1)*self.combustor['\\alpha_c']*uc)**.5,
-                    #this is a stagnation relation, loosened SigEq
-                    TCS([T41 <= Tt41-.5*(u41**2)/self.combustor['C_{p_{c}}']]),
-
-                    #here we assume no pressure loss in mixing so P41=P4a
-                    Pt41 == P4a*(Tt41/T41)**(ccexp1),
-
-                    #compute station 4a quantities, assumes a gamma value of 1.313 (air @ 1400K)
-                    u4a == M4a*((1.313*self.engine['R']*Tt4)**.5)/self.combustor['hold_{4a}'],
-                    uc == self.combustor['r_{uc}']*u4a,
-                    P4a == Pt4*self.combustor['hold_{4a}']**(ccexp2),
-                    ])
-            #combustor constraints with no mixing
-            else:
-                constraints.extend([
-                    Pt41 == Pt4,
-                    Tt41 == Tt4,
-                    ])
-
-        return constraints
-
-
-
 class Thrust(Model):
     """"
     thrust sizing model
@@ -1042,14 +932,14 @@ class ThrustPerformance(Model):
             constraints.extend([
                 P8 == state["P_{atm}"],
                 h8 == self.thrust['C_{p_{fex}'] * T8,
-                TCS([u8**2 + 2*h8 <= 2*ht8]),
+                Tight([u8**2 + 2*h8 <= 2*ht8]),
                 (P8/Pt8)**(fanexexp) == T8/Tt8,
                 ht8 == self.thrust['C_{p_{fex}'] * Tt8,
 
                 #core exhaust
                 P6 == state["P_{atm}"],   #B.4.11 intro
                 (P6/Pt6)**(turbexexp) == T6/Tt6,
-                TCS([u6**2 + 2*h6 <= 2*ht6]),
+                Tight([u6**2 + 2*h6 <= 2*ht6]),
                 h6 == self.thrust['C_{p_{tex}'] * T6,
                 ht6 == self.thrust['C_{p_{tex}'] * Tt6,
 
@@ -1059,7 +949,7 @@ class ThrustPerformance(Model):
                 alpha <= self.thrust['\\alpha_{max}'],
 
                 #SIGNOMIAL
-                TCS([F <= F6 + F8]),
+                Tight([F <= F6 + F8]),
 
                 Fsp == F/((alphap1)*mCore*state['a']),   #B.191
 
@@ -1070,13 +960,13 @@ class ThrustPerformance(Model):
         if BLI:
             constraints.extend([
                 #overall thrust values
-                TCS([F8/(alpha * mCore) + state['V']*engine['f_{BLI_{V}}'] <= u8]),  #B.188
+                Tight([F8/(alpha * mCore) + state['V']*engine['f_{BLI_{V}}'] <= u8]),  #B.188
                 ])
 
         else:
             constraints.extend([
                 #overall thrust values
-                TCS([F8/(alpha * mCore) + state['V'] <= u8]),  #B.188
+                Tight([F8/(alpha * mCore) + state['V'] <= u8]),  #B.188
                 ])
 
         return constraints
