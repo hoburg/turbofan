@@ -9,7 +9,7 @@ def initialize_guess():
             'T_{t_{1.8}}': 1e3*units('K'),
             'h_{t_{1.8}}': 1e6*units('J/kg'),
             'P_{T_{2}}': 1e1*units('kPa'),
-            'T_{T_{2}}': 1e3*units('K'),
+            'T_{t_{2}}': 1e3*units('K'),
             'h_{T_{2}}': 1e6*units('J/kg'),
             'P_{t_{2.1}}': 1e3*units('K'),
             'T_{t_{2.1}}': 1e3*units('K'),

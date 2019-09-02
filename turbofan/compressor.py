@@ -46,8 +46,8 @@ class CompressorPerformance(Model):
         ht18 = Variable('h_{t_{1.8}}', 'J/kg', 'Stagnation Enthalpy at the Diffuser Exit (1.8)')
 
         #--------------------------fan inlet (station 2) stagnation states---------------------------
-        Pt2 = Variable('P_{T_{2}}', 'kPa', 'Stagnation Pressure at the Fan Inlet (2)')
-        Tt2 = Variable('T_{T_{2}}', 'K', 'Stagnation Temperature at the Fan Inlet (2)')
+        Pt2 = Variable('P_{t_{2}}', 'kPa', 'Stagnation Pressure at the Fan Inlet (2)')
+        Tt2 = Variable('T_{t_{2}}', 'K', 'Stagnation Temperature at the Fan Inlet (2)')
         ht2 = Variable('h_{T_{2}}', 'J/kg', 'Stagnation Enthalpy at the Fan Inlet (2)')
 
         #--------------------------fan exit (station 2.1) stagnation states---------------------

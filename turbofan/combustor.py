@@ -60,7 +60,7 @@ class CombustorPerformance(Model):
         # define the (f+1) variable, limits the number of signomials
         # for station 4a
         u4a = Variable('u_{4a}', 'm/s', 'Flow Velocity at Station 4a')
-        M4a = Variable('M_{4a}', '-', 'User Specified Station 4a Mach #')
+        M4a = Variable('M_{4a}', .1025, '-', 'User Specified Station 4a Mach #')
         P4a = Variable('P_{4a}', 'kPa', 'Static Pressure at Station 4a (4a)')
         uc = Variable('u_c', 'm/s', 'Cooling Airflow Speed at Station 4a')
 
@@ -84,9 +84,6 @@ class CombustorPerformance(Model):
                 SignomialEquality(fp1,f+1),
                 # Tight([fp1 >= f+1]),
                 # Relaxation of this SE makes problem hit iteration limit
-
-                #investigate doing this with a substitution
-                M4a == .1025,
                 ])
 
             #mixing constraints

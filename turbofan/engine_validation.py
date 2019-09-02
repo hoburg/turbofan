@@ -8,20 +8,19 @@ from gpkit.small_scripts import mag
 import numpy as np
 
 # Import engine components and maps
-from .maps import (FanMap, FanMapPerformance, HPCMap, HPCMapPerformance,
-                  LPCMap, LPCMapPerformance)
-from .turbine import Turbine, TurbinePerformance
-from .combustor import Combustor, CombustorPerformance
-from .compressor import Compressor, CompressorPerformance
+from maps import FanMap, HPCMap, LPCMap
+from turbine import Turbine
+from combustor import Combustor
+from compressor import Compressor
 
 # Import substitution files
-from .subs import get_737800_subs, get_D82_subs, get_cfm56_subs, get_ge90_subs
-from .test_missions import (TestMissionCFM, TestMissionTASOPT,
-                           TestMissionGE90, TestMissionD82)
-from .initial_guess import initialize_guess
+from subs import get_737800_subs, get_D82_subs, get_cfm56_subs, get_ge90_subs
+from test_missions import (TestMissionCFM, TestMissionTASOPT,
+                           TestMissionGE90, TestMissionD82, diffs)
+from initial_guess import initialize_guess
 
 # relaxed constants solve
-from .relaxed_constants import relaxed_constants, post_process
+from relaxed_constants import relaxed_constants, post_process
 
 #Cp and gamma values estimated from https://www.ohio.edu/mechanical/thermo/property_tables/air/air_Cp_{c}v.html
 
@@ -159,7 +158,7 @@ class Engine(Model):
                 (self.engineP['\\pi_{f}']*(1.7/self.fanmap['\\pi_{f_D}'])) >= .9*(1.06 * (self.engineP['m_{tild_f}'])**0.137)**10,
 
                 #define mbar
-                self.engineP['m_{f}'] == self.engineP['m_{fan}']*((self.engineP['T_{T_{2}}']/self.constants['T_{ref}'])**.5)/(self.engineP['P_{T_{2}}']/self.constants['P_{ref}']),    #B.280
+                self.engineP['m_{f}'] == self.engineP['m_{fan}']*((self.engineP['T_{t_{2}}']/self.constants['T_{ref}'])**.5)/(self.engineP['P_{t_{2}}']/self.constants['P_{ref}']),    #B.280
 
                 self.engineP['\\pi_{f}'] >= 1,
 
@@ -173,7 +172,7 @@ class Engine(Model):
                 self.engineP['\\pi_{lc}'] >= 1,
 
                 #define mbar..technially not needed b/c constrained in res 2 and/or 3
-                self.engineP['m_{lc}'] == self.engineP['m_{core}']*((self.engineP['T_{T_{2}}']/self.constants['T_{ref}'])**.5)/(self.engineP['P_{T_{2}}']/self.constants['P_{ref}']),    #B.280
+                self.engineP['m_{lc}'] == self.engineP['m_{core}']*((self.engineP['T_{t_{2}}']/self.constants['T_{ref}'])**.5)/(self.engineP['P_{t_{2}}']/self.constants['P_{ref}']),    #B.280
                 ]
 
             hpcmap = [
@@ -249,14 +248,14 @@ class Engine(Model):
                 #compute fan mas flow
                 self.engineP['m_{fan}'] == self.engineP['\\rho_7']*self.sizing['A_{7}']*self.engineP['u_{7}'],
 
-                SignomialEquality(self.engineP['m_{total}'],self.engineP['m_{fan}'] + self.engineP['m_{core}']), # [SP] # [SigEq]
+                SignomialEquality(self.engineP['m_{total}'], self.engineP['m_{fan}'] + self.engineP['m_{core}']), # [SP] # [SigEq]
                 ]
 
             #component area sizing
             fanarea = [
                 #fan area
-                self.engineP['P_{2}'] == self.engineP['P_{T_{2}}']*(self.engineP['hold_{2}'])**(-3.512),
-                self.engineP['T_{2}'] == self.engineP['T_{T_{2}}'] * self.engineP['hold_{2}']**-1,
+                self.engineP['P_{2}'] == self.engineP['P_{t_{2}}']*(self.engineP['hold_{2}'])**(-3.512),
+                self.engineP['T_{2}'] == self.engineP['T_{t_{2}}'] * self.engineP['hold_{2}']**-1,
                 self.sizing['A_{2}'] == self.engineP['m_{fan}']/(self.engineP['\\rho_{2}']*self.engineP['u_{2}']),     #B.198
                 ]
 
@@ -833,8 +832,9 @@ if __name__ == "__main__":
     #update substitutions and solve
     m.substitutions.update(substitutions)
     m = relaxed_constants(m)
-    sol = m.localsolve(verbosity = 2)
+    sol = m.localsolve(verbosity=2, x0=x0)
     post_process(sol)
+    sol.savetxt()
 
     #print out various percent differences in TSFC and engine areas
     diffs(sol, eng)
