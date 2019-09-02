@@ -74,7 +74,6 @@ class AircraftP(Model):
         WLoadmax = Variable('W_{Load_max}', 'N/m^2', 'Max Wing Loading')
         WLoad = Variable('W_{Load}', 'N/m^2', 'Wing Loading')
         t = Variable('tmin', 'min', 'Segment Flight Time in Minutes')
-        thours = Variable('thr', 'hour', 'Segment Flight Time in Hours')
 
         constraints = []
 
@@ -101,10 +100,7 @@ class AircraftP(Model):
             WLoad <= WLoadmax,
 
             #compute fuel burn from TSFC
-            W_burn == aircraft['numeng']*self.engineP['TSFC'] * thours * self.engineP['thrust'],
-
-            #time unit conversion
-            t == thours,
+            W_burn == aircraft['numeng']*self.engineP['TSFC'] * t * self.engineP['thrust'],
 
             #make lift equal weight --> small angle approx in climb
             self.wingP['L_{wing}'] == W_avg,

@@ -180,10 +180,10 @@ class Mission(Model):
             ac.engine.engineP['c1'] == 1+.5*(.401)*M0**2,
 
             #constraint on drag and thrust
-            ac['numeng']*ac.engine['F_{spec}'][:Nclimb1] >= climb1['D'] + climb1['W_{avg}'] * climb1['\\theta'],
+            ac['numeng']*ac.engine['F'][:Nclimb1] >= climb1['D'] + climb1['W_{avg}'] * climb1['\\theta'],
 
             #climb rate constraints
-            TCS([climb1['excessP'] + climb1.state['V'] * climb1['D'] <=  climb1.state['V'] * ac['numeng'] * ac.engine['F_{spec}'][:Nclimb1]]),
+            TCS([climb1['excessP'] + climb1.state['V'] * climb1['D'] <=  climb1.state['V'] * ac['numeng'] * ac.engine['F'][:Nclimb1]]),
             ]
 
         M2 = .8
@@ -196,10 +196,10 @@ class Mission(Model):
             ac.engine.engineP['M_2'][Nclimb1:Nclimb1 + Nclimb2] == climb2['M'],
 
             #constraint on drag and thrust
-            ac['numeng']*ac.engine['F_{spec}'][Nclimb1:Nclimb1 + Nclimb2] >= climb2['D'] + climb2['W_{avg}'] * climb2['\\theta'],
+            ac['numeng']*ac.engine['F'][Nclimb1:Nclimb1 + Nclimb2] >= climb2['D'] + climb2['W_{avg}'] * climb2['\\theta'],
 
             #climb rate constraints
-            TCS([climb2['excessP'] + climb2.state['V'] * climb2['D'] <=  climb2.state['V'] * ac['numeng'] * ac.engine['F_{spec}'][Nclimb1:Nclimb1 + Nclimb2]]),
+            TCS([climb2['excessP'] + climb2.state['V'] * climb2['D'] <=  climb2.state['V'] * ac['numeng'] * ac.engine['F'][Nclimb1:Nclimb1 + Nclimb2]]),
             ]
 
         M2 = .8
@@ -214,10 +214,10 @@ class Mission(Model):
 ##            cruise['M'] >= .7,
 
            #constraint on drag and thrust
-            ac['numeng'] * ac.engine['F_{spec}'][Nclimb1 + Nclimb2:] >= cruise['D'] + cruise['W_{avg}'] * cruise['\\theta'],
+            ac['numeng'] * ac.engine['F'][Nclimb1 + Nclimb2:] >= cruise['D'] + cruise['W_{avg}'] * cruise['\\theta'],
 
             #climb rate constraints
-            TCS([cruise['excessP'] + cruise.state['V'] * cruise['D'] <=  cruise.state['V'] * ac['numeng'] * ac.engine['F_{spec}'][Nclimb1 + Nclimb2:]]),
+            TCS([cruise['excessP'] + cruise.state['V'] * cruise['D'] <=  cruise.state['V'] * ac['numeng'] * ac.engine['F'][Nclimb1 + Nclimb2:]]),
             ]
 
         return constraints + ac + climb1 + climb2 + cruise + enginecruise + engineclimb1 + engineclimb2 + enginestate + statelinking

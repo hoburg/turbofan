@@ -157,10 +157,10 @@ class Mission(Model):
             ac.engine.engineP['c1'] == 1+.5*(.401)*M0**2,
 
             #constraint on drag and thrust
-            ac['numeng']*ac.engine['F_{spec}'][:Nclimb] >= climb['D'] + climb['W_{avg}'] * climb['\\theta'],
+            ac['numeng']*ac.engine['F'][:Nclimb] >= climb['D'] + climb['W_{avg}'] * climb['\\theta'],
 
             #climb rate constraints
-            TCS([climb['excessP'] + climb.state['V'] * climb['D'] <=  climb.state['V'] * ac['numeng'] * ac.engine['F_{spec}'][:Nclimb]]),
+            TCS([climb['excessP'] + climb.state['V'] * climb['D'] <=  climb.state['V'] * ac['numeng'] * ac.engine['F'][:Nclimb]]),
             ]
 
         M2 = .8
@@ -179,10 +179,10 @@ class Mission(Model):
             ac.engine.engineP['M_{2.5}'][3] == M25,
 
            #constraint on drag and thrust
-            ac['numeng']*ac.engine['F_{spec}'][Nclimb:] >= cruise['D'] + cruise['W_{avg}'] * cruise['\\theta'],
+            ac['numeng']*ac.engine['F'][Nclimb:] >= cruise['D'] + cruise['W_{avg}'] * cruise['\\theta'],
 
             #climb rate constraints
-            TCS([cruise['excessP'] + cruise.state['V'] * cruise['D'] <=  cruise.state['V'] * ac['numeng'] * ac.engine['F_{spec}'][Nclimb:]]),
+            TCS([cruise['excessP'] + cruise.state['V'] * cruise['D'] <=  cruise.state['V'] * ac['numeng'] * ac.engine['F'][Nclimb:]]),
             ]
 
         return constraints + ac + climb + cruise + enginecruise + engineclimb + enginestate + statelinking

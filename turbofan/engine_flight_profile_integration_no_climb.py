@@ -125,7 +125,7 @@ class Mission(Model):
 
 
             #steady level flight constraint on D 
-            cruise['D'] == ac['numeng'] * ac.engine['F_{spec}'],
+            cruise['D'] == ac['numeng'] * ac.engine['F'],
 
             #breguet range eqn
             TCS([cruise['z_{bre}'] >= (ac.engine['TSFC'] * cruise['thr']*

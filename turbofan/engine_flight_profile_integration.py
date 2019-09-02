@@ -152,10 +152,10 @@ class Mission(Model):
             ac.engine.engineP['c1'] == 1+.5*(.401)*M0**2,
 
             #constraint on drag and thrust
-            ac['numeng']*ac.engine['F_{spec}'][:Nclimb] >= climb['D'] + climb['W_{avg}'] * climb['\\theta'],
+            ac['numeng']*ac.engine['F'][:Nclimb] >= climb['D'] + climb['W_{avg}'] * climb['\\theta'],
 
             #climb rate constraints
-            TCS([climb['excessP'] + climb.state['V'] * climb['D'] <=  climb.state['V'] * ac['numeng'] * ac.engine['F_{spec}'][:Nclimb]]),
+            TCS([climb['excessP'] + climb.state['V'] * climb['D'] <=  climb.state['V'] * ac['numeng'] * ac.engine['F'][:Nclimb]]),
             ]
 
         M25 = .6
@@ -165,7 +165,7 @@ class Mission(Model):
             ac.engine.engineP['M_{2.5}'][Nclimb:] == M25,
             
             #steady level flight constraint on D 
-            cruise['D'] == ac['numeng'] * ac.engine['F_{spec}'][Nclimb:],
+            cruise['D'] == ac['numeng'] * ac.engine['F'][Nclimb:],
 
             #breguet range eqn
             TCS([cruise['z_{bre}'] >= (ac.engine['TSFC'][Nclimb:] * cruise['thr']*

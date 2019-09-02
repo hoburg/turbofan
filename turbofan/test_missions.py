@@ -9,12 +9,11 @@ class TestMissionCFM(Model):
         self.engine = engine
         M2 = .6
         M25 = .6
-        M4a = .1025
         M0 = .8
 
         climb = [
-            engine['F_{spec}'][0] == 5496.4 * 4.4 * units('N'),
-            engine['F_{spec}'][1] == 5961.9 * 4.4 * units('N'),
+            engine['F'][0] == 5496.4 * 4.4 * units('N'),
+            engine['F'][1] == 5961.9 * 4.4 * units('N'),
 
             engine.state["T_{atm}"] == 218*units('K'),
 
@@ -30,7 +29,6 @@ class TestMissionCFM(Model):
 
         M2 = .6
         M25 = .6
-        M4a = .1025
         M0 = .8
 
         cruise = [
@@ -49,13 +47,12 @@ class TestMissionTASOPT(Model):
         self.engine = engine
         M2 = .6
         M25 = .6
-        M4a = .1025
         M0 = .8025
 
         toclimb = [
-            engine['F_{spec}'][0] == 94.971 * units('kN'),
-            engine['F_{spec}'][1] == 30.109* units('kN'),
-            engine['F_{spec}'][2] == 22.182 * units('kN'),
+            engine['F'][0] == 94.971 * units('kN'),
+            engine['F'][1] == 30.109* units('kN'),
+            engine['F'][2] == 22.182 * units('kN'),
 
             engine.state['P_{atm}'][1] == 23.84*units('kPa'),    #36K feet
             engine.state["T_{atm}"][1] == 218*units('K'),
@@ -69,7 +66,6 @@ class TestMissionTASOPT(Model):
 
         M2 = .6
         M25 = .6
-        M4a = .1025
         M0 = .8
 
         cruise = [
@@ -85,7 +81,6 @@ class TestMissionTASOPT(Model):
 
         M2 = .6
         M25 = .6
-        M4a = .1025
         M0 = .2201
 
         rotation = [
@@ -108,12 +103,11 @@ class TestMissionGE90(Model):
         self.engine = engine
         M2 = .65
         M25 = .6
-        M4a = .1025
         M0 = .85
 
         climb = [
-            engine['F_{spec}'][1] == 19600.4*units('lbf'),
-            engine['F_{spec}'][0] == 16408.4 * units('lbf'),
+            engine['F'][1] == 19600.4*units('lbf'),
+            engine['F'][0] == 16408.4 * units('lbf'),
 
             engine.state['P_{atm}'][1] == 23.84*units('kPa'),    #36K feet
             engine.state["T_{atm}"][1] == 218*units('K'),
@@ -128,7 +122,6 @@ class TestMissionGE90(Model):
         M0 = .65
         M2 = .6
         M25 = .45
-        M4a = .1025
 
         cruise = [
             engine.state['P_{atm}'][0] == 23.84*units('kPa'),    #36K feet
@@ -150,12 +143,11 @@ class TestMissionD82(Model):
         self.engine = engine
         M2 = .6
         M25 = .6
-        M4a = .1025
         M0 = .5
 
         engineclimb = [
-            engine['F_{spec}'][1] == 13.798*units('kN'),
-            engine['F_{spec}'][0] == 11.949 * units('kN'),
+            engine['F'][1] == 13.798*units('kN'),
+            engine['F'][0] == 11.949 * units('kN'),
 
             engine.state['P_{atm}'][1] == 23.84*units('kPa'),    #36K feet
             engine.state["T_{atm}"][1] == 218*units('K'),
@@ -168,7 +160,6 @@ class TestMissionD82(Model):
 
         M2 = .6
         M25 = .6
-        M4a = .1025
         M0 = .72
 
         enginecruise = [

@@ -41,7 +41,7 @@ p17
 S'N'
 sS'name'
 p18
-S'F_{spec}'
+S'F'
 p19
 sS'models'
 p20

@@ -8,19 +8,19 @@ from gpkit.small_scripts import mag
 import numpy as np
 
 # Import engine components and maps
-from maps import FanMap, HPCMap, LPCMap
-from turbine import Turbine
-from combustor import Combustor
-from compressor import Compressor
+from turbofan.maps import FanMap, HPCMap, LPCMap
+from turbofan.turbine import Turbine
+from turbofan.combustor import Combustor
+from turbofan.compressor import Compressor
 
 # Import substitution files
-from subs import get_737800_subs, get_D82_subs, get_cfm56_subs, get_ge90_subs
-from test_missions import (TestMissionCFM, TestMissionTASOPT,
+from turbofan.subs import get_737800_subs, get_D82_subs, get_cfm56_subs, get_ge90_subs
+from turbofan.test_missions import (TestMissionCFM, TestMissionTASOPT,
                            TestMissionGE90, TestMissionD82, diffs)
-from initial_guess import initialize_guess
+from turbofan.initial_guess import initialize_guess
 
 # relaxed constants solve
-from relaxed_constants import relaxed_constants, post_process
+from turbofan.relaxed_constants import relaxed_constants, post_process
 
 #Cp and gamma values estimated from https://www.ohio.edu/mechanical/thermo/property_tables/air/air_Cp_{c}v.html
 
@@ -40,7 +40,7 @@ class Engine(Model):
     OPRmax = True
     vals = []
 
-    def setup(self, res7, cooling, N, state, eng, Nfleet=0, BLI=False, goption=1):
+    def setup(self, cooling, N, state, eng, Nfleet=0, BLI=False, goption=1):
         """
         setup method for the engine model
         """
@@ -65,26 +65,13 @@ class Engine(Model):
             with Vectorize(Nfleet):
                 with Vectorize(N):
                     #-------------------Specified Thrust or Tt4-----------------------
-                    self.engineP = self.dynamic(self.state, res7, BLI)
+                    self.engineP = self.dynamic(self.state, BLI)
                     OPR = Variable('OPR', '-', 'Overall Pressure Ratio')
-                    if res7 == 0:
-                        #variables for the thrust constraint
-                        Fspec = Variable('F_{spec}', 'N', 'Specified Total Thrust')
-                    if res7 == 1:
-                        Tt4spec = Variable('T_{t_{4spec}}', 'K', 'Specified Combustor Exit (Station 4) Stagnation Temperature')
-
-
         else:
             with Vectorize(N):
                 #-------------------Specified Thrust or Tt4-----------------------
-                self.engineP = self.dynamic(self.state, res7, BLI)
+                self.engineP = self.dynamic(self.state, BLI)
                 OPR = Variable('OPR', '-', 'Overall Pressure Ratio')
-                if res7 == 0:
-                    #variables for the thrust constraint
-                    Fspec = Variable('F_{spec}', 'N', 'Specified Total Thrust')
-                if res7 == 1:
-                    Tt4spec = Variable('T_{t_{4spec}}', 'K', 'Specified Combustor Exit (Station 4) Stagnation Temperature')
-
 
         models = [self.compressor , self. combustor, self. turbine, self. thrust, self.fanmap, self.lpcmap, self.hpcmap, self.sizing, self.state, self.engineP]
 
@@ -99,27 +86,24 @@ class Engine(Model):
 
         #OPRmax
         OPRmax = Variable('OPR_{max}', '-', 'Maximum OPR')
+        Tt41max = Variable('T_{t_{4.1_{max}}}', 'K', 'Max turbine inlet temperature')
 
-        #make the constraints
-        constraints = []
-
+        # Writing constraints
         with SignomialsEnabled():
 
-            weight = [
-                  W_engine/units('kg') >= (self.engineP['m_{total}']/(self.engineP['\\alpha_{+1}']))*
+            weight = [Tight([W_engine/units('kg') >= (self.engineP['m_{total}']/(self.engineP['\\alpha_{+1}']))*
                                           ((1/(100*units('lb/s')))*9.81*units('m/s^2'))*
                                           (1684.5+17.7*(self.engineP['\\pi_{f}']*self.engineP['\\pi_{lc}']*self.engineP['\\pi_{hc}'])/30+
-                                           1662.2*(self.engineP['\\alpha']/5)**1.2),
-                  ]
+                                           1662.2*(self.engineP['\\alpha']/5)**1.2)])]
 
-            diameter = [
-                df == (4 * self.sizing['A_{2}']/(np.pi * HTRfSub))**.5,
-                dlpc == (4 * self.sizing['A_{2.5}']/(np.pi * HTRlpcSub))**.5,
-                ]
+            diameter = [df == (4 * self.sizing['A_{2}']/(np.pi * HTRfSub))**.5,
+                        dlpc == (4 * self.sizing['A_{2.5}']/(np.pi * HTRlpcSub))**.5,
+                        ]
 
             fmix = [
                 # compute f with mixing
-                Tight([self.combustor['\\eta_{B}'] * self.engineP['f'] * self.combustor['h_{f}'] >= (1-self.combustor['\\alpha_c'])*self.engineP['h_{t_4}']-(1-self.combustor['\\alpha_c'])*self.engineP['h_{t_3}']+self.combustor['C_{p_{fuel}']*self.engineP['f']*(self.engineP['T_{t_4}']-self.combustor['T_{t_f}'])]),
+                Tight([self.combustor['\\eta_{B}'] * self.engineP['f'] * self.combustor['h_{f}'] >= (1-self.combustor['\\alpha_c'])*self.engineP['h_{t_4}'] - \
+                       (1-self.combustor['\\alpha_c'])*self.engineP['h_{t_3}']+self.combustor['C_{p_{fuel}']*self.engineP['f']*(self.engineP['T_{t_4}']-self.combustor['T_{t_f}'])]),
                 # compute Tt41...mixing causes a temperature drop
                 # had to include Tt4 here to prevent it from being pushed down to zero
                 # relaxed SigEq
@@ -231,13 +215,13 @@ class Engine(Model):
             res4 = [
                 #residual 4
                 (self.engineP['P_{7}']/self.engineP['P_{t_7}']) == (self.engineP['T_{7}']/self.engineP['T_{t_7}'])**(3.5),
-                (self.engineP['T_{7}']/self.engineP['T_{t_7}'])**-1 >= 1 + .2 * self.engineP['M_7']**2,
+                Tight([(self.engineP['T_{7}']/self.engineP['T_{t_7}'])**-1 >= 1 + .2 * self.engineP['M_7']**2]),
                 ]
 
             res5 = [
                 #residual 5 core nozzle mass flow
                 (self.engineP['P_{5}']/self.engineP['P_{t_5}']) == (self.engineP['T_{5}']/self.engineP['T_{t_5}'])**(3.583979),
-                (self.engineP['T_{5}']/self.engineP['T_{t_5}'])**-1 >= 1 + .2 * self.engineP['M_5']**2,
+                Tight([(self.engineP['T_{5}']/self.engineP['T_{t_5}'])**-1 >= 1 + .2 * self.engineP['M_5']**2]),
                 ]
 
 
@@ -248,7 +232,7 @@ class Engine(Model):
                 #compute fan mas flow
                 self.engineP['m_{fan}'] == self.engineP['\\rho_7']*self.sizing['A_{7}']*self.engineP['u_{7}'],
 
-                SignomialEquality(self.engineP['m_{total}'], self.engineP['m_{fan}'] + self.engineP['m_{core}']), # [SP] # [SigEq]
+                Tight([self.engineP['m_{total}'] >= self.engineP['m_{fan}'] + self.engineP['m_{core}']]), # [SP] # [SigEq]
                 ]
 
             #component area sizing
@@ -356,50 +340,26 @@ class Engine(Model):
                     self.fanmap['\\bar{m}_{fan_{D}}'] <= 1.7 * self.sizing['\\alpha_{OD}'] * self.sizing['m_{coreD}']* ((250.0/288)**.5)/(50/101.325),
                     ]
 
-        if res7 == 0:
-            res7list = [
-                #residual 7
-                #option #1, constrain the engine's thrust
-                self.engineP['F'] == Fspec,
-                ]
-            if cooling and self.Ttmax:
-                Tt41max = Variable('T_{t_{4.1_{max}}}', 'K', 'Max turbine inlet temperature')
-                res7list.extend([
-                    self.engineP['T_{t_{4.1}}']  <= Tt41max,
-                    ])
-            elif self.Ttmax:
-                Tt4max = Variable('T_{t_{4_{max}}}', 'K', 'Max turbine inlet temperature')
-                res7list.extend([
-                    self.engineP['T_{t_4}'] <= Tt4max,
-                    ])
-        if res7 == 1:
-            if cooling:
-                res7list = [
-                    #residual 7
-                    #option #2 constrain the burner exit temperature
-                    self.engineP['T_{t_{4.1}}'] == Tt4spec,  #B.265
-                    ]
-            else:
-                res7list = [
-                    #residual 7
-                    #option #2 constrain the burner exit temperature
-                    self.engineP['T_{t_4}'] == Tt4spec,  #B.265
-                    ]
         if self.OPRmax:
-            res7list.extend([OPR <= OPRmax])
+            opr.extend([OPR <= OPRmax])
+
+        constraints = [weight, diameter, shaftpower, hptexit,
+                       fanmap, lpcmap, hpcmap, opr, thrust,
+                       res1, res2, res3, res4, res5,
+                       massflux, fanarea, HPCarea, onDest]
 
         if cooling:
-            constraints = [weight, diameter, fmix, shaftpower, hptexit, fanmap, lpcmap, hpcmap, opr, thrust, res1, res2, res3, res4, res5, massflux, fanarea, HPCarea, onDest, res7list]
+            constraints += fmix
         else:
-            constraints = [weight, diameter, fnomix, shaftpower, hptexit, fanmap, lpcmap, hpcmap, opr, thrust, res1, res2, res3, res4, res5, massflux, fanarea, HPCarea, onDest, res7list]
+            constraints += fnomix
 
         return models, constraints
 
-    def dynamic(self, state, res7, BLI):
+    def dynamic(self, state, BLI):
         """
         creates an instance of the engine performance model
         """
-        return EnginePerformance(self, state, res7, BLI)
+        return EnginePerformance(self, state, BLI)
 
     def setvals(self, eng, BLI, goption):
         """
@@ -468,7 +428,7 @@ class EnginePerformance(Model):
     """
     Engine performance model
     """
-    def setup(self, engine, state, res7, BLI, **kwargs):
+    def setup(self, engine, state, BLI, **kwargs):
 
         #create the subcomponent performance models
         self.compP = engine.compressor.dynamic(engine.constants, state, BLI)
@@ -478,7 +438,7 @@ class EnginePerformance(Model):
         self.fanmapP = engine.fanmap.dynamic(engine.constants)
         self.lpcmapP = engine.lpcmap.dynamic(engine.constants)
         self.hpcmapP = engine.hpcmap.dynamic(engine.constants)
-        self.sizingP = engine.sizing.dynamic(engine.constants, engine.compressor, engine.fanmap, engine.lpcmap, engine.hpcmap, state, res7)
+        self.sizingP = engine.sizing.dynamic(engine.constants, engine.compressor, engine.fanmap, engine.lpcmap, engine.hpcmap, state)
 
         models = [self.compP, self.combP, self.turbineP, self.thrustP, self.fanmapP, self.lpcmapP, self.hpcmapP, self.sizingP]
 
@@ -649,22 +609,22 @@ class Sizing(Model):
 
         constraints.extend([
             #-------------------------Areas------------------------
-            A5 + A7 <= A2,
+            Tight([A5 + A7 <= A2]),
             ])
 
         return constraints
 
-    def dynamic(self, engine, compressor, fanmap, lpcmap, hpcmap, state, res7):
+    def dynamic(self, engine, compressor, fanmap, lpcmap, hpcmap, state):
         """
         creates an instance of the engine sizing performance model
         """
-        return SizingPerformance(self, engine, compressor, fanmap, lpcmap, hpcmap, state, res7)
+        return SizingPerformance(self, engine, compressor, fanmap, lpcmap, hpcmap, state)
 
 class SizingPerformance(Model):
     """
     engine sizing performance model
     """
-    def setup(self, sizing, engine, compressor, fanmap, lpcmap, hpcmap, state, res7, cooling = True):
+    def setup(self, sizing, engine, compressor, fanmap, lpcmap, hpcmap, state):
         self.sizing = sizing
         self.engine = engine
         self.compressor = compressor
@@ -750,7 +710,6 @@ class TestState(Model):
     def setup(self):
         #define variables
         p_atm = Variable("P_{atm}", "kPa", "air pressure")
-        TH = 5.257386998354459
         T_atm = Variable("T_{atm}", "K", "air temperature")
 
         V = Variable('V', 'kts', 'Aircraft Flight Speed')
@@ -802,7 +761,7 @@ if __name__ == "__main__":
     with Vectorize(N):
         state = TestState()
 
-    engine = Engine(0, True, N, state, eng)
+    engine = Engine(True, N, state, eng)
 
     if eng == 0:
         mission = TestMissionCFM(engine)
