@@ -126,7 +126,7 @@ class Engine(Model):
 
                 #LPT shaft power balance
                 Tight([self.constants['M_{takeoff}']*self.turbine['\eta_{LPshaft}']*(self.engineP['fp1'])*
-                (self.engineP['h_{t_{4.5}}'] - self.engineP['h_{t_{4.9}}']) >= self.engineP['h_{t_{2.5}}']-self.engineP['h_{t_{1.8}}']+self.engineP['\\alpha']*(self.engineP['h_{t_{2.1}}'] - self.engineP['h_{T_{2}}'])]),    #B.165
+                (self.engineP['h_{t_{4.5}}'] - self.engineP['h_{t_{4.9}}']) >= self.engineP['h_{t_{2.5}}']-self.engineP['h_{t_{1.8}}']+self.engineP['\\alpha']*(self.engineP['h_{t_{2.1}}'] - self.engineP['h_{t_{2}}'])]),    #B.165
                 ]
 
             hptexit = [
