@@ -735,7 +735,7 @@ def test():
     with Vectorize(2):
         state = TestState()
 
-    engine = Engine(0, True, 2, state, 0)
+    engine = Engine(True, 2, state, 0)
 
     mission = TestMissionCFM(engine)
 
