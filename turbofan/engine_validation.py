@@ -552,8 +552,7 @@ class ThrustPerformance(Model):
 
                 #constrain the new BPR
                 alpha == mFan / mCore,
-                # SignomialEquality(alphap1, alpha + 1),
-                Tight([alphap1 <= alpha + 1]),
+                SignomialEquality(alphap1, alpha + 1),
                 alpha <= self.thrust['\\alpha_{max}'],
 
                 #SIGNOMIAL
