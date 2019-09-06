@@ -19,9 +19,6 @@ from turbofan.test_missions import (TestMissionCFM, TestMissionTASOPT,
                            TestMissionGE90, TestMissionD82, diffs)
 from turbofan.initial_guess import initialize_guess
 
-# relaxed constants solve
-from turbofan.relaxed_constants import relaxed_constants, post_process
-
 #Cp and gamma values estimated from https://www.ohio.edu/mechanical/thermo/property_tables/air/air_Cp_{c}v.html
 
 class Engine(Model):
@@ -741,8 +738,7 @@ def test():
 
     substitutions = get_cfm56_subs()
     m = Model((10*engine.engineP.thrustP['TSFC'][0]+engine.engineP.thrustP['TSFC'][1]), [engine, mission], substitutions)
-    m = relaxed_constants(m)
-    sol = m.localsolve(verbosity = 2)
+    sol = m.penalty_ccp_solve(verbosity = 2)
 
 if __name__ == "__main__":
     """
@@ -790,9 +786,7 @@ if __name__ == "__main__":
 
     #update substitutions and solve
     m.substitutions.update(substitutions)
-    m = relaxed_constants(m)
-    sol = m.localsolve(verbosity=2, x0=x0)
-    post_process(sol)
+    sol = m.penalty_ccp_solve(verbosity=2, x0=x0)
     sol.savetxt()
 
     #print out various percent differences in TSFC and engine areas
