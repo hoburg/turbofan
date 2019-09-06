@@ -82,7 +82,7 @@ class CombustorPerformance(Model):
 
                 # making f+1 GP compatible --> needed for convergence
                 SignomialEquality(fp1,f+1),
-                # Tight([fp1 >= f+1]),
+                # Tight([fp1 <= f+1]),
                 # Relaxation of this SE makes problem hit iteration limit
                 ])
 

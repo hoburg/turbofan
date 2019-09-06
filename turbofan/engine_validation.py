@@ -552,7 +552,8 @@ class ThrustPerformance(Model):
 
                 #constrain the new BPR
                 alpha == mFan / mCore,
-                SignomialEquality(alphap1, alpha + 1),
+                # SignomialEquality(alphap1, alpha + 1),
+                Tight([alphap1 <= alpha + 1]),
                 alpha <= self.thrust['\\alpha_{max}'],
 
                 #SIGNOMIAL
@@ -738,7 +739,7 @@ def test():
 
     substitutions = get_cfm56_subs()
     m = Model((10*engine.engineP.thrustP['TSFC'][0]+engine.engineP.thrustP['TSFC'][1]), [engine, mission], substitutions)
-    sol = m.penalty_ccp_solve(verbosity = 2)
+    sol = m.localsolve(verbosity = 2)
 
 if __name__ == "__main__":
     """
@@ -786,7 +787,7 @@ if __name__ == "__main__":
 
     #update substitutions and solve
     m.substitutions.update(substitutions)
-    sol = m.penalty_ccp_solve(verbosity=2, x0=x0)
+    sol = m.localsolve(verbosity=2, mutategp=False) #x0=x0)
     sol.savetxt()
 
     #print out various percent differences in TSFC and engine areas
