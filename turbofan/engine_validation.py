@@ -478,7 +478,7 @@ class Thrust(Model):
         Cpfanex = Variable('C_{p_{fex}', 1005, 'J/kg/K', "Cp Value for Air at 300K") #gamma =1.4        #heat of combustion of jet fuel
 
         #max by pass ratio
-        alpha_max = Variable('\\alpha_{max}', '-', 'By Pass Ratio')
+        alpha_max = Variable('\\alpha_{max}', '-', 'Maximum bypass ratio')
 
     def dynamic(self, engine, state, BLI):
         """
@@ -780,9 +780,9 @@ if __name__ == "__main__":
 
     #select the proper objective based off of the number of flight segments
     if eng == 0 or eng == 2 or eng == 3:
-        m = Model(np.dot([10.,1.],engine.engineP.thrustP['TSFC']), [engine, mission], substitutions, x0=x0)
+        m = Model(engine['W_{engine}']**0.5*np.dot([10.,1.],engine.engineP.thrustP['TSFC']), [engine, mission], substitutions, x0=x0)
     if eng == 1:
-        m = Model(np.dot([10., 1., 1.], engine.engineP.thrustP['TSFC']), [engine, mission], substitutions, x0=x0)
+        m = Model(engine['W_{engine}']**0.5*np.dot([10., 1., 1.], engine.engineP.thrustP['TSFC']), [engine, mission], substitutions, x0=x0)
 
     #update substitutions and solve
     m.substitutions.update(substitutions)
