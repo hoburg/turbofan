@@ -72,16 +72,18 @@ class Engine(Model):
 
         models = [self.compressor , self. combustor, self. turbine, self. thrust, self.fanmap, self.lpcmap, self.hpcmap, self.sizing, self.state, self.engineP]
 
-        #engine weight
+        g        = Variable('g', 9.81, 'm/s^2', 'Gravitational acceleration')
+
+        # Engine weight
         W_engine = Variable('W_{engine}', 'N', 'Weight of a Single Turbofan Engine')
 
-        #engine fan diameter
+        # Engine fan diameter
         df = Variable('d_{f}', 'm', 'Fan Diameter')
         dlpc = Variable('d_{LPC}', 'm', 'LPC Diameter')
         HTRfSub = Variable('HTR_{f_{SUB}}', '-', '1 - HTRf^2')
         HTRlpcSub = Variable('HTR_{lpc_{SUB}}', '-', '1 - HTRlpc^2')
 
-        #OPRmax
+        # OPRmax
         OPRmax = Variable('OPR_{max}', '-', 'Maximum OPR')
         Tt41max = Variable('T_{t_{4.1_{max}}}', 'K', 'Max turbine inlet temperature')
 
@@ -180,7 +182,7 @@ class Engine(Model):
                 Tight([self.engineP['F_{6}']/(self.constants['M_{takeoff}']*self.engineP['m_{core}']) + (self.engineP['fp1'])*self.state['V'] <= (self.engineP['fp1'])*self.engineP['u_{6}']]),
 
                 #ISP
-                self.engineP['I_{sp}'] == self.engineP['F_{sp}']*self.state['a']*(self.engineP['\\alpha_{+1}'])/(self.engineP['f']*self.constants['g']),  #B.192
+                self.engineP['I_{sp}'] == self.engineP['F_{sp}']*self.state['a']*(self.engineP['\\alpha_{+1}'])/(self.engineP['f']*g),  #B.192
                 ]
 
             res1 = [
@@ -446,13 +448,6 @@ class EngineConstants(Model):
     Class of constants used in the engine model
     """
     def setup(self, BLI):
-        #-----------------------air properties------------------
-        #ambient
-        R = Variable('R', 287, 'J/kg/K', 'R', constant=True)
-
-        #gravity
-        g = Variable('g', 9.81, 'm/(s^2)', 'Gravitational Acceleration', constant=True)
-
         #-------------------------reference temp and pressure--------------------
         Tref = Variable('T_{ref}', 'K', 'Reference Stagnation Temperature')
         Pref = Variable('P_{ref}', 'kPa', 'Reference Stagnation Pressure')
@@ -464,8 +459,6 @@ class EngineConstants(Model):
         if BLI:
             fBLIP = Variable('f_{BLI_{P}}', '-', 'BLI Stagnation Pressure Loss Ratio')
             fBLIV = Variable('f_{BLI_{V}}', '-', 'BLI Velocity Loss Ratio')
-
-
 
 class Thrust(Model):
     """"
@@ -629,6 +622,8 @@ class SizingPerformance(Model):
         self.lpcmap = lpcmap
         self.hpcmap = hpcmap
 
+        R = Variable('R', 287, 'J/kg/K', 'Air Specific Heat')
+
         #new variables
         #exhaust mach numbers
         a5 = Variable('a_{5}', 'm/s', 'Speed of Sound at Station 5')
@@ -675,27 +670,27 @@ class SizingPerformance(Model):
             #residual 4
             P7 >= state["P_{atm}"],
             M7 <= 1,
-            a7 == (1.4*self.engine['R']*T7)**.5,
+            a7 == (1.4*R*T7)**.5,
             a7*M7 == u7,
-            rho7 == P7/(self.engine['R']*T7),
+            rho7 == P7/(R*T7),
 
             #residual 5 core nozzle mass flow
             P5 >= state["P_{atm}"],
             M5 <= 1,
-            a5 == (1.387*self.engine['R']*T5)**.5,
+            a5 == (1.387*R*T5)**.5,
             a5*M5 == u5,
-            rho5 == P5/(self.engine['R']*T5),
+            rho5 == P5/(R*T5),
 
             #component area sizing
             #fan area
             h2 == self.compressor['C_{p_{1}'] * T2,
-            rho2 == P2/(self.engine['R'] * T2),  #B.196
-            u2 == M2*(self.compressor['C_{p_{1}']*self.engine['R']*T2/(781.*units('J/kg/K')))**.5,  #B.197
+            rho2 == P2/(R * T2),  #B.196
+            u2 == M2*(self.compressor['C_{p_{1}']*R*T2/(781.*units('J/kg/K')))**.5,  #B.197
 
             #HPC area
             h25 == self.compressor['C_{p_{2}'] * T25,
-            rho25 == P25/(self.engine['R']*T25),
-            u25 == M25*(self.compressor['C_{p_{2}']*self.engine['R']*T25/(781.*units('J/kg/K')))**.5,   #B.202
+            rho25 == P25/(R*T25),
+            u25 == M25*(self.compressor['C_{p_{2}']*R*T25/(781.*units('J/kg/K')))**.5,   #B.202
         ])
 
         return constraints

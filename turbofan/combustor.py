@@ -43,6 +43,8 @@ class CombustorPerformance(Model):
         self.combustor = combustor
         self.engine = engine
 
+        R = Variable('R', 287, 'J/kg/K', 'Air Specific Heat')
+
         #define new variables
         #--------------------------combustor exit (station 4) stagnation states------------------
         Pt4 = Variable('P_{t_4}', 'kPa', 'Stagnation Pressure at the Combustor Exit (4)')
@@ -91,13 +93,14 @@ class CombustorPerformance(Model):
                 constraints.extend([
                     fp1*u41 == (u4a*(fp1)*self.combustor['\\alpha_c']*uc)**.5,
                     #this is a stagnation relation, loosened SigEq
-                    Tight([T41 <= Tt41-.5*(u41**2)/self.combustor['C_{p_{c}}']]),
+                    # SignomialEquality(T41, Tt41-.5*(u41**2)/self.combustor['C_{p_{c}}']),
+                    T41 <= Tt41-.5*(u41**2)/self.combustor['C_{p_{c}}'],
 
                     #here we assume no pressure loss in mixing so P41=P4a
                     Pt41 == P4a*(Tt41/T41)**(self.combustor.ccexp1),
 
                     #compute station 4a quantities, assumes a gamma value of 1.313 (air @ 1400K)
-                    u4a == M4a*((1.313*self.engine['R']*Tt4)**.5)/self.combustor['hold_{4a}'],
+                    u4a == M4a*((1.313*R*Tt4)**.5)/self.combustor['hold_{4a}'],
                     uc == self.combustor['r_{uc}']*u4a,
                     P4a == Pt4*self.combustor['hold_{4a}']**(self.combustor.ccexp2),
                     ])
